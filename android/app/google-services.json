@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188728907181",
+    "project_id": "biletrezervasyon-495b5",
+    "storage_bucket": "biletrezervasyon-495b5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188728907181:android:a2fda2f7755b483dacfd24",
+        "android_client_info": {
+          "package_name": "com.example.bilet_rezervasyon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjTuqQx83lzy3ued3LZsA_LC45FkT_kqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
