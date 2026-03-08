@@ -1,21 +1,76 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'app_routes.dart';
+import 'firebase_options.dart';
+import 'screens/admin_home_screen.dart';
+import 'screens/company_officer_home_screen.dart';
+import 'screens/home_resolver_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/normal_user_home_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/register_screen.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final firebaseEnabled = await _initializeFirebase();
+  runApp(MainApp(firebaseEnabled: firebaseEnabled));
+}
+
+Future<bool> _initializeFirebase() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    return true;
+  } on UnsupportedError {
+    return false;
+  }
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  const MainApp({required this.firebaseEnabled, super.key});
+
+  final bool firebaseEnabled;
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
+    if (!firebaseEnabled) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Firebase bu platform icin ayarli degil. Android veya iOS hedefinde calistirin.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ),
         ),
-      ),
+      );
+    }
+
+    final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Bilet Rezervasyon',
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
+      initialRoute: isLoggedIn ? AppRoutes.homeResolver : AppRoutes.login,
+      routes: {
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        AppRoutes.homeResolver: (context) => const HomeResolverScreen(),
+        AppRoutes.homeNormalUser: (context) => const NormalUserHomeScreen(),
+        AppRoutes.homeCompanyOfficer: (context) =>
+            const CompanyOfficerHomeScreen(),
+        AppRoutes.homeAdmin: (context) => const AdminHomeScreen(),
+        AppRoutes.profile: (context) => const ProfileScreen(),
+      },
     );
   }
 }

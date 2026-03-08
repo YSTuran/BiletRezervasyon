@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"biletrezervasyon-495b5","appId":"1:188728907181:android:a2fda2f7755b483dacfd24","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"biletrezervasyon-495b5","configurations":{"android":"1:188728907181:android:a2fda2f7755b483dacfd24","ios":"1:188728907181:ios:9231677eee0492a8acfd24"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "biletrezervasyon-495b5",
+          "appId": "1:188728907181:android:a2fda2f7755b483dacfd24",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "biletrezervasyon-495b5",
+          "configurations": {
+            "android": "1:188728907181:android:a2fda2f7755b483dacfd24",
+            "ios": "1:188728907181:ios:9231677eee0492a8acfd24"
+          }
+        }
+      }
+    }
+  },
+  "functions": {
+    "source": "functions"
+  },
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "port":4000 
+    }
+  }
+}
