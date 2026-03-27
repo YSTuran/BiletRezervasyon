@@ -1,104 +1,117 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../app_routes.dart';
+import '../repositories/auth_repository.dart';
+import '../view_models/profile_view_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({this.userEmail, this.onLogout, super.key});
 
   final String? userEmail;
   final Future<void> Function()? onLogout;
 
-  String _resolveEmail() {
-    final passedEmail = userEmail?.trim() ?? '';
-    if (passedEmail.isNotEmpty) {
-      return passedEmail;
-    }
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    final authEmail = FirebaseAuth.instance.currentUser?.email?.trim() ?? '';
-    if (authEmail.isNotEmpty) {
-      return authEmail;
-    }
+class _ProfileScreenState extends State<ProfileScreen> {
+  late final ProfileViewModel _viewModel;
 
-    return 'E-posta bilgisi yok';
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ProfileViewModel(
+      userEmail: widget.userEmail,
+      onLogout: widget.onLogout,
+    );
   }
 
-  Future<void> _defaultLogout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (!context.mounted) {
-      return;
-    }
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
-  Future<void> _logout(BuildContext context) async {
-    if (onLogout != null) {
-      await onLogout!.call();
-      return;
+  Future<void> _logout() async {
+    try {
+      final route = await _viewModel.logout();
+      if (!mounted || route == null) {
+        return;
+      }
+
+      Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+    } on UserMessageException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cikis yapilamadi.')));
     }
-    await _defaultLogout(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final email = _resolveEmail();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 32,
-                      child: Text(
-                        email.isNotEmpty
-                            ? email.substring(0, 1).toUpperCase()
-                            : '?',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
+    return AnimatedBuilder(
+      animation: _viewModel,
+      builder: (context, _) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Profil')),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          child: Text(
+                            _viewModel.email.substring(0, 1).toUpperCase(),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _viewModel.email,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: _viewModel.isBusy ? null : _logout,
+                          icon: const Icon(Icons.logout),
+                          label: _viewModel.isBusy
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Cikis Yap'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      email,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () async {
-                        try {
-                          await _logout(context);
-                        } on FirebaseAuthException catch (error) {
-                          if (!context.mounted) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Cikis yapilamadi: ${error.code}'),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Cikis Yap'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -1,9 +1,6 @@
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../app_routes.dart';
-import '../services/user_sync_service.dart';
+import '../view_models/home_resolver_view_model.dart';
 
 class HomeResolverScreen extends StatefulWidget {
   const HomeResolverScreen({super.key});
@@ -16,93 +13,54 @@ class _HomeResolverScreenState extends State<HomeResolverScreen> {
   @override
   void initState() {
     super.initState();
+    _viewModel = HomeResolverViewModel();
     _resolveAndNavigate();
   }
 
+  late final HomeResolverViewModel _viewModel;
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
   Future<void> _resolveAndNavigate() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    final instruction = await _viewModel.resolveRoute();
+
+    if (!mounted || instruction == null) {
       return;
     }
 
-    var destinationRoute = AppRoutes.homeNormalUser;
-    String? warningMessage;
-
-    try {
-      final syncedUser = await UserSyncService.syncSignedInUser(
-        preferredFullName: user.displayName,
-      );
-      destinationRoute = AppRoutes.homeForRole(syncedUser.role);
-    } on FirebaseFunctionsException catch (error) {
-      warningMessage = _mapSyncWarning(error.code, error.message);
-    } catch (_) {
-      warningMessage = 'Kullanici rolu alinamadi, varsayilan ekran aciliyor.';
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    if (warningMessage != null) {
+    if (instruction.message != null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(warningMessage)));
+      ).showSnackBar(SnackBar(content: Text(instruction.message!)));
     }
 
     Navigator.of(
       context,
-    ).pushNamedAndRemoveUntil(destinationRoute, (route) => false);
-  }
-
-  String _mapSyncWarning(String code, String? message) {
-    final trimmedMessage = (message ?? '').trim();
-
-    switch (code) {
-      case 'not-found':
-        return 'PostgreSQL senkron fonksiyonu bulunamadi, varsayilan ekran aciliyor.';
-      case 'unavailable':
-      case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi, varsayilan ekran aciliyor.';
-      case 'permission-denied':
-      case 'unauthenticated':
-        return 'Yetki dogrulanamadi, varsayilan ekran aciliyor.';
-      case 'failed-precondition':
-        if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
-        }
-        return 'Sunucu yapilandirmasi eksik, varsayilan ekran aciliyor.';
-      case 'internal':
-        if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
-        }
-        return 'PostgreSQL baglantisi basarisiz, varsayilan ekran aciliyor.';
-      default:
-        if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
-        }
-        return 'Rol bilgisi alinamadi, varsayilan ekran aciliyor.';
-    }
+    ).pushNamedAndRemoveUntil(instruction.route, (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Rol bilgisi kontrol ediliyor...'),
-          ],
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _viewModel,
+      builder: (context, _) {
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text('Rol bilgisi kontrol ediliyor...'),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

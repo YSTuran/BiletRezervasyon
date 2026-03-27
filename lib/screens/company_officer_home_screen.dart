@@ -1,18 +1,18 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../models/enums.dart';
+import '../view_models/home_view_model.dart';
 
 class CompanyOfficerHomeScreen extends StatelessWidget {
   const CompanyOfficerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final email =
-        FirebaseAuth.instance.currentUser?.email ?? 'E-posta bilgisi yok';
+    final viewModel = HomeViewModel(role: UserRole.companyOfficer);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Firma Gorevlisi Ana Sayfa')),
+      appBar: AppBar(title: Text(viewModel.appBarTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -20,13 +20,13 @@ class CompanyOfficerHomeScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Bu sayfa firma gorevlisine ait home screen.',
+                viewModel.description,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'Aktif kullanici: $email',
+                'Aktif kullanici: ${viewModel.email}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
