@@ -1,8 +1,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../app_routes.dart';
-import '../models/enums.dart';
+import '../../../../core/navigation/app_routes.dart';
+import '../../../../models/enums.dart';
 import '../services/user_sync_service.dart';
 
 class UserMessageException implements Exception {

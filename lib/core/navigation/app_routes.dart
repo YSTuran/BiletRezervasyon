@@ -1,4 +1,4 @@
-import 'models/enums.dart';
+import '../../models/enums.dart';
 
 abstract final class AppRoutes {
   static const login = '/login';

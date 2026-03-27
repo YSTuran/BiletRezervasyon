@@ -1,16 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'app_routes.dart';
+import 'core/navigation/app_routes.dart';
+import 'features/auth/data/repositories/auth_repository.dart';
+import 'features/auth/presentation/screens/home_resolver_screen.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/presentation/screens/register_screen.dart';
+import 'features/home/presentation/screens/admin_home_screen.dart';
+import 'features/home/presentation/screens/company_officer_home_screen.dart';
+import 'features/home/presentation/screens/normal_user_home_screen.dart';
+import 'features/profile/presentation/screens/profile_screen.dart';
 import 'firebase_options.dart';
-import 'screens/admin_home_screen.dart';
-import 'screens/company_officer_home_screen.dart';
-import 'screens/home_resolver_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/normal_user_home_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/register_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,21 +58,24 @@ class MainApp extends StatelessWidget {
 
     final isLoggedIn = FirebaseAuth.instance.currentUser != null;
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Bilet Rezervasyon',
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-      initialRoute: isLoggedIn ? AppRoutes.homeResolver : AppRoutes.login,
-      routes: {
-        AppRoutes.login: (context) => const LoginScreen(),
-        AppRoutes.register: (context) => const RegisterScreen(),
-        AppRoutes.homeResolver: (context) => const HomeResolverScreen(),
-        AppRoutes.homeNormalUser: (context) => const NormalUserHomeScreen(),
-        AppRoutes.homeCompanyOfficer: (context) =>
-            const CompanyOfficerHomeScreen(),
-        AppRoutes.homeAdmin: (context) => const AdminHomeScreen(),
-        AppRoutes.profile: (context) => const ProfileScreen(),
-      },
+    return Provider<AuthRepository>(
+      create: (_) => AuthRepository(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Bilet Rezervasyon',
+        theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
+        initialRoute: isLoggedIn ? AppRoutes.homeResolver : AppRoutes.login,
+        routes: {
+          AppRoutes.login: (context) => const LoginScreen(),
+          AppRoutes.register: (context) => const RegisterScreen(),
+          AppRoutes.homeResolver: (context) => const HomeResolverScreen(),
+          AppRoutes.homeNormalUser: (context) => const NormalUserHomeScreen(),
+          AppRoutes.homeCompanyOfficer: (context) =>
+              const CompanyOfficerHomeScreen(),
+          AppRoutes.homeAdmin: (context) => const AdminHomeScreen(),
+          AppRoutes.profile: (context) => const ProfileScreen(),
+        },
+      ),
     );
   }
 }

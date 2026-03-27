@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../app_routes.dart';
-import '../repositories/auth_repository.dart';
-import 'base_view_model.dart';
+import '../../../../core/navigation/app_routes.dart';
+import '../../../../core/presentation/view_models/base_view_model.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 
 class ProfileViewModel extends BaseViewModel {
   ProfileViewModel({

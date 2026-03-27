@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
-import '../models/enums.dart';
+import '../../../../models/enums.dart';
 
 class SyncedUser {
   const SyncedUser({

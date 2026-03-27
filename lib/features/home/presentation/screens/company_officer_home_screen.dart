@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../app_routes.dart';
-import '../models/enums.dart';
+import '../../../../core/navigation/app_routes.dart';
+import '../../../../models/enums.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../view_models/home_view_model.dart';
 
-class AdminHomeScreen extends StatelessWidget {
-  const AdminHomeScreen({super.key});
+class CompanyOfficerHomeScreen extends StatelessWidget {
+  const CompanyOfficerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = HomeViewModel(role: UserRole.admin);
+    return Provider<HomeViewModel>(
+      create: (context) => HomeViewModel(
+        role: UserRole.companyOfficer,
+        authRepository: context.read<AuthRepository>(),
+      ),
+      child: const _RoleHomeView(),
+    );
+  }
+}
+
+class _RoleHomeView extends StatelessWidget {
+  const _RoleHomeView();
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.read<HomeViewModel>();
 
     return Scaffold(
       appBar: AppBar(title: Text(viewModel.appBarTitle)),

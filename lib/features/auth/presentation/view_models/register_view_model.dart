@@ -1,6 +1,6 @@
-import '../models/enums.dart';
-import '../repositories/auth_repository.dart';
-import 'base_view_model.dart';
+import '../../../../core/presentation/view_models/base_view_model.dart';
+import '../../../../models/enums.dart';
+import '../../data/repositories/auth_repository.dart';
 
 class RegisterViewModel extends BaseViewModel {
   RegisterViewModel({AuthRepository? authRepository})

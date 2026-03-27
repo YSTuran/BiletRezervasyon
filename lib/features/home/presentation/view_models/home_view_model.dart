@@ -1,5 +1,5 @@
-import '../models/enums.dart';
-import '../repositories/auth_repository.dart';
+import '../../../../features/auth/data/repositories/auth_repository.dart';
+import '../../../../models/enums.dart';
 
 class HomeViewModel {
   HomeViewModel({required this.role, AuthRepository? authRepository})
