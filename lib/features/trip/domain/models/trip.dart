@@ -1,4 +1,4 @@
-import 'enums.dart';
+import '../../../../models/enums.dart';
 
 class Trip {
   Trip({

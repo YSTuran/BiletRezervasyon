@@ -8,10 +8,14 @@ import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/presentation/screens/home_resolver_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
+import 'features/company/data/repositories/company_repository.dart';
 import 'features/home/presentation/screens/admin_home_screen.dart';
 import 'features/home/presentation/screens/company_officer_home_screen.dart';
 import 'features/home/presentation/screens/normal_user_home_screen.dart';
+import 'features/payment/data/repositories/payment_repository.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
+import 'features/reservation/data/repositories/reservation_repository.dart';
+import 'features/trip/data/repositories/trip_repository.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -58,8 +62,14 @@ class MainApp extends StatelessWidget {
 
     final isLoggedIn = FirebaseAuth.instance.currentUser != null;
 
-    return Provider<AuthRepository>(
-      create: (_) => AuthRepository(),
+    return MultiProvider(
+      providers: [
+        Provider<AuthRepository>(create: (_) => AuthRepository()),
+        Provider<CompanyRepository>(create: (_) => CompanyRepository()),
+        Provider<TripRepository>(create: (_) => TripRepository()),
+        Provider<ReservationRepository>(create: (_) => ReservationRepository()),
+        Provider<PaymentRepository>(create: (_) => PaymentRepository()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Bilet Rezervasyon',
