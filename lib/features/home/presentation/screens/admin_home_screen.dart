@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
 
 class AdminHomeScreen extends StatelessWidget {
@@ -48,6 +49,17 @@ class _RoleHomeView extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.tripList,
+                    arguments: const TripListArguments(role: UserRole.admin),
+                  );
+                },
+                icon: const Icon(Icons.fact_check_outlined),
+                label: Text(viewModel.tripButtonLabel),
+              ),
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).pushNamed(AppRoutes.profile);

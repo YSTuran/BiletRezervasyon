@@ -20,5 +20,11 @@ class HomeViewModel {
     UserRole.admin => 'Bu sayfa admin kullaniciya ait home screen.',
   };
 
+  String get tripButtonLabel => switch (role) {
+    UserRole.normalUser => 'Seferleri Gor',
+    UserRole.companyOfficer => 'Seferleri Yonet',
+    UserRole.admin => 'Seferleri Incele',
+  };
+
   String get email => _authRepository.resolveEmail();
 }

@@ -16,6 +16,10 @@ import 'features/payment/data/repositories/payment_repository.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/reservation/data/repositories/reservation_repository.dart';
 import 'features/trip/data/repositories/trip_repository.dart';
+import 'features/trip/presentation/models/trip_route_arguments.dart';
+import 'features/trip/presentation/screens/trip_create_screen.dart';
+import 'features/trip/presentation/screens/trip_detail_screen.dart';
+import 'features/trip/presentation/screens/trip_list_screen.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -85,6 +89,57 @@ class MainApp extends StatelessWidget {
           AppRoutes.homeAdmin: (context) => const AdminHomeScreen(),
           AppRoutes.profile: (context) => const ProfileScreen(),
         },
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case AppRoutes.tripList:
+              final arguments = settings.arguments;
+              if (arguments is! TripListArguments) {
+                return _buildRouteError(settings, 'Sefer listesi acilamadi.');
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => TripListScreen(arguments: arguments),
+              );
+            case AppRoutes.tripDetail:
+              final arguments = settings.arguments;
+              if (arguments is! TripDetailArguments) {
+                return _buildRouteError(settings, 'Sefer detayi acilamadi.');
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => TripDetailScreen(arguments: arguments),
+              );
+            case AppRoutes.tripCreate:
+              final arguments = settings.arguments;
+              if (arguments is! TripCreateArguments) {
+                return _buildRouteError(
+                  settings,
+                  'Sefer olusturma ekrani acilamadi.',
+                );
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => TripCreateScreen(arguments: arguments),
+              );
+            default:
+              return null;
+          }
+        },
+      ),
+    );
+  }
+
+  Route<dynamic> _buildRouteError(RouteSettings settings, String message) {
+    return MaterialPageRoute<void>(
+      settings: settings,
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Yonlendirme Hatasi')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(message, textAlign: TextAlign.center),
+          ),
+        ),
       ),
     );
   }
