@@ -62,6 +62,14 @@ class _RoleHomeView extends StatelessWidget {
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: () {
+                  Navigator.of(context).pushNamed(AppRoutes.companyManagement);
+                },
+                icon: const Icon(Icons.apartment_outlined),
+                label: const Text('Firmalari Yonet'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () {
                   Navigator.of(context).pushNamed(AppRoutes.profile);
                 },
                 icon: const Icon(Icons.person_outline),

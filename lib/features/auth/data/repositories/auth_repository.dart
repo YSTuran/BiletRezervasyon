@@ -106,6 +106,8 @@ class AuthRepository {
 
   Future<void> signOut() => _firebaseAuth.signOut();
 
+  String? resolveCurrentUserId() => _firebaseAuth.currentUser?.uid;
+
   String resolveEmail({String? preferredEmail}) {
     final passedEmail = preferredEmail?.trim() ?? '';
     if (passedEmail.isNotEmpty) {

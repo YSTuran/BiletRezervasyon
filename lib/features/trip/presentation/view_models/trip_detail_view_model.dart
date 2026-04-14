@@ -24,6 +24,8 @@ class TripDetailViewModel extends BaseViewModel {
   String? get errorMessage => _errorMessage;
 
   bool get showManagementHint => role != UserRole.normalUser;
+  bool get canReviewTrip =>
+      role == UserRole.admin && _trip?.status == TripStatus.pendingApproval;
 
   Future<void> load() async {
     if (isBusy) {
@@ -48,4 +50,72 @@ class TripDetailViewModel extends BaseViewModel {
       setBusy(false);
     }
   }
+
+  Future<Trip?> approveTrip() async {
+    if (isBusy) {
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      final updatedTrip = await _repository.approveTrip(tripId: tripId);
+      if (updatedTrip == null) {
+        _errorMessage = 'Sefer bulunamadi.';
+        notifyListeners();
+        return null;
+      }
+
+      _trip = updatedTrip;
+      _errorMessage = null;
+      notifyListeners();
+      return updatedTrip;
+    } catch (_) {
+      _errorMessage = 'Sefer onaylanamadi.';
+      notifyListeners();
+      rethrow;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  Future<Trip?> rejectTrip(String rejectionReason) async {
+    final trimmedReason = rejectionReason.trim();
+    if (trimmedReason.isEmpty) {
+      throw const TripReviewException('Red nedeni zorunludur.');
+    }
+
+    if (isBusy) {
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      final updatedTrip = await _repository.rejectTrip(
+        tripId: tripId,
+        rejectionReason: trimmedReason,
+      );
+      if (updatedTrip == null) {
+        _errorMessage = 'Sefer bulunamadi.';
+        notifyListeners();
+        return null;
+      }
+
+      _trip = updatedTrip;
+      _errorMessage = null;
+      notifyListeners();
+      return updatedTrip;
+    } catch (_) {
+      _errorMessage = 'Sefer reddedilemedi.';
+      notifyListeners();
+      rethrow;
+    } finally {
+      setBusy(false);
+    }
+  }
+}
+
+class TripReviewException implements Exception {
+  const TripReviewException(this.message);
+
+  final String message;
 }

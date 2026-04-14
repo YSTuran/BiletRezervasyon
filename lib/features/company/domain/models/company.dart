@@ -5,6 +5,7 @@ class Company {
     required this.id,
     required this.name,
     required this.officerUserId,
+    required this.transportType,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -16,6 +17,7 @@ class Company {
   final String id;
   final String name;
   final String officerUserId;
+  final TransportType transportType;
   final ApprovalStatus status;
   final String? reviewedByAdminId;
   final DateTime? reviewedAt;
@@ -29,6 +31,7 @@ class Company {
     String? id,
     String? name,
     String? officerUserId,
+    TransportType? transportType,
     ApprovalStatus? status,
     String? reviewedByAdminId,
     DateTime? reviewedAt,
@@ -40,6 +43,7 @@ class Company {
       id: id ?? this.id,
       name: name ?? this.name,
       officerUserId: officerUserId ?? this.officerUserId,
+      transportType: transportType ?? this.transportType,
       status: status ?? this.status,
       reviewedByAdminId: reviewedByAdminId ?? this.reviewedByAdminId,
       reviewedAt: reviewedAt ?? this.reviewedAt,
@@ -54,6 +58,7 @@ class Company {
       'id': id,
       'name': name,
       'officer_user_id': officerUserId,
+      'transport_type': transportType.value,
       'status': status.value,
       'reviewed_by_admin_id': reviewedByAdminId,
       'reviewed_at': reviewedAt?.toIso8601String(),
@@ -68,6 +73,7 @@ class Company {
       id: json['id'] as String,
       name: json['name'] as String,
       officerUserId: json['officer_user_id'] as String,
+      transportType: TransportType.fromValue(json['transport_type'] as String),
       status: ApprovalStatus.fromValue(json['status'] as String),
       reviewedByAdminId: json['reviewed_by_admin_id'] as String?,
       reviewedAt: json['reviewed_at'] == null

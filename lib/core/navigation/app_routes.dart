@@ -8,6 +8,8 @@ abstract final class AppRoutes {
   static const homeCompanyOfficer = '/home/company-officer';
   static const homeAdmin = '/home/admin';
   static const profile = '/profile';
+  static const companyForm = '/company/form';
+  static const companyManagement = '/company/management';
   static const tripList = '/trips';
   static const tripDetail = '/trips/detail';
   static const tripCreate = '/trips/create';

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../data/repositories/trip_repository.dart';
+import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../view_models/trip_create_view_model.dart';
 
@@ -163,6 +165,45 @@ class _TripCreateViewState extends State<_TripCreateView> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripCreateViewModel>();
 
+    if (!viewModel.canCreateTrip || viewModel.transportType == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Yeni Sefer')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        viewModel.blockedMessage,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.companyForm);
+                        },
+                        icon: const Icon(Icons.apartment_outlined),
+                        label: const Text('Firma Bilgilerine Git'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Yeni Sefer')),
       body: SingleChildScrollView(
@@ -188,29 +229,21 @@ class _TripCreateViewState extends State<_TripCreateView> {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 24),
-                      DropdownButtonFormField<TransportType>(
-                        initialValue: viewModel.transportType,
+                      InputDecorator(
                         decoration: const InputDecoration(
                           labelText: 'Ulasim Turu',
                           prefixIcon: Icon(Icons.alt_route),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: TransportType.bus,
-                            child: Text('Otobus'),
+                        child: Text(
+                          TripPresentationHelper.transportLabel(
+                            viewModel.transportType!,
                           ),
-                          DropdownMenuItem(
-                            value: TransportType.flight,
-                            child: Text('Ucak'),
-                          ),
-                        ],
-                        onChanged: viewModel.isBusy
-                            ? null
-                            : (value) {
-                                if (value != null) {
-                                  viewModel.updateTransportType(value);
-                                }
-                              },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Firma taniminiza gore sadece bu ulasim turunde sefer acabilirsiniz.',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

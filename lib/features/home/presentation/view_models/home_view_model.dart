@@ -15,14 +15,17 @@ class HomeViewModel {
   };
 
   String get description => switch (role) {
-    UserRole.normalUser => 'Bu sayfa normal kullaniciya ait home screen.',
-    UserRole.companyOfficer => 'Bu sayfa firma gorevlisine ait home screen.',
-    UserRole.admin => 'Bu sayfa admin kullaniciya ait home screen.',
+    UserRole.normalUser =>
+      'Onaylanmis tum seferleri inceleyebilir ve tur bazinda filtreleyebilirsiniz.',
+    UserRole.companyOfficer =>
+      'Firma bilgilerinizi girip admin onayi sonrasi yalnizca kendi seferlerinizi yonetebilirsiniz.',
+    UserRole.admin =>
+      'Firmalari ve seferleri inceleyip onay surecini yonetebilirsiniz.',
   };
 
   String get tripButtonLabel => switch (role) {
-    UserRole.normalUser => 'Seferleri Gor',
-    UserRole.companyOfficer => 'Seferleri Yonet',
+    UserRole.normalUser => 'Tum Seferleri Gor',
+    UserRole.companyOfficer => 'Sirket Seferlerini Yonet',
     UserRole.admin => 'Seferleri Incele',
   };
 

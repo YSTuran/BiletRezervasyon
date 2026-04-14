@@ -12,23 +12,53 @@ class TripListViewModel extends BaseViewModel {
 
   List<Trip> _trips = const [];
   String? _errorMessage;
+  TransportType? _transportFilter;
 
   List<Trip> get trips => _trips;
+  List<Trip> get filteredTrips {
+    final filter = _transportFilter;
+    if (filter == null) {
+      return _trips;
+    }
+    return _trips.where((trip) => trip.transportType == filter).toList();
+  }
+
   String? get errorMessage => _errorMessage;
+  TransportType? get transportFilter => _transportFilter;
 
   String get title => switch (role) {
-    UserRole.normalUser => 'Uygun Seferler',
-    UserRole.companyOfficer => 'Sefer Yonetimi',
+    UserRole.normalUser => 'Tum Seferler',
+    UserRole.companyOfficer => 'Sirketime Ait Seferler',
     UserRole.admin => 'Tum Seferler',
   };
 
-  String get emptyMessage => switch (role) {
-    UserRole.normalUser => 'Gosterilecek uygun sefer bulunmuyor.',
-    UserRole.companyOfficer => 'Size ait kayitli sefer bulunmuyor.',
-    UserRole.admin => 'Sistemde kayitli sefer bulunmuyor.',
-  };
+  String get emptyMessage {
+    if (_transportFilter != null) {
+      return 'Secili ulasim turunde gosterilecek sefer bulunmuyor.';
+    }
 
-  bool get canCreateTrip => role == UserRole.companyOfficer;
+    return switch (role) {
+      UserRole.normalUser => 'Gosterilecek sefer bulunmuyor.',
+      UserRole.companyOfficer => 'Sirketinize ait kayitli sefer bulunmuyor.',
+      UserRole.admin => 'Sistemde kayitli sefer bulunmuyor.',
+    };
+  }
+
+  bool get canCreateTrip =>
+      role == UserRole.companyOfficer &&
+      _repository.canCurrentOfficerCreateTrips;
+
+  String? get tripCreationHintMessage => role == UserRole.companyOfficer
+      ? _repository.currentOfficerTripCreationBlockMessage
+      : null;
+
+  void updateTransportFilter(TransportType? transportType) {
+    if (_transportFilter == transportType) {
+      return;
+    }
+    _transportFilter = transportType;
+    notifyListeners();
+  }
 
   Future<void> load() async {
     if (isBusy) {

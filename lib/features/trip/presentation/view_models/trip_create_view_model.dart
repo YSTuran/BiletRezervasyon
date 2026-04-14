@@ -15,17 +15,11 @@ class TripCreateViewModel extends BaseViewModel {
 
   final TripRepository _repository;
 
-  TransportType _transportType = TransportType.bus;
-
-  TransportType get transportType => _transportType;
-
-  void updateTransportType(TransportType transportType) {
-    if (_transportType == transportType) {
-      return;
-    }
-    _transportType = transportType;
-    notifyListeners();
-  }
+  TransportType? get transportType => _repository.currentOfficerTransportType;
+  bool get canCreateTrip => _repository.canCurrentOfficerCreateTrips;
+  String get blockedMessage =>
+      _repository.currentOfficerTripCreationBlockMessage ??
+      'Sefer olusturulamiyor.';
 
   Future<Trip?> createTrip({
     required String origin,
@@ -64,10 +58,15 @@ class TripCreateViewModel extends BaseViewModel {
       throw const TripFormException('Fiyat sifirdan buyuk olmalidir.');
     }
 
+    final selectedTransportType = transportType;
+    if (!canCreateTrip || selectedTransportType == null) {
+      throw TripFormException(blockedMessage);
+    }
+
     setBusy(true);
     try {
       return await _repository.createTrip(
-        transportType: _transportType,
+        transportType: selectedTransportType,
         origin: normalizedOrigin,
         destination: normalizedDestination,
         departureAt: departureAt,

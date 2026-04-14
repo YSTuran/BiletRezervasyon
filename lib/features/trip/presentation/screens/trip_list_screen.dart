@@ -70,6 +70,15 @@ class _TripListViewState extends State<_TripListView> {
     );
   }
 
+  Future<void> _openCompanyForm() async {
+    await Navigator.of(context).pushNamed(AppRoutes.companyForm);
+    if (!mounted) {
+      return;
+    }
+
+    await _viewModel.load();
+  }
+
   Color _statusColor(BuildContext context, Trip trip) {
     final colorScheme = Theme.of(context).colorScheme;
     return switch (trip.status) {
@@ -83,6 +92,40 @@ class _TripListViewState extends State<_TripListView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripListViewModel>();
+    final trips = viewModel.filteredTrips;
+    final companyHintMessage = viewModel.tripCreationHintMessage;
+
+    final filterBar = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('Tumu'),
+            selected: viewModel.transportFilter == null,
+            onSelected: (_) {
+              viewModel.updateTransportFilter(null);
+            },
+          ),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: const Text('Otobus'),
+            selected: viewModel.transportFilter == TransportType.bus,
+            onSelected: (_) {
+              viewModel.updateTransportFilter(TransportType.bus);
+            },
+          ),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: const Text('Ucak'),
+            selected: viewModel.transportFilter == TransportType.flight,
+            onSelected: (_) {
+              viewModel.updateTransportFilter(TransportType.flight);
+            },
+          ),
+        ],
+      ),
+    );
 
     Widget body;
     if (viewModel.isBusy && viewModel.trips.isEmpty) {
@@ -104,7 +147,7 @@ class _TripListViewState extends State<_TripListView> {
           ),
         ),
       );
-    } else if (viewModel.trips.isEmpty) {
+    } else if (trips.isEmpty) {
       body = Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -116,10 +159,10 @@ class _TripListViewState extends State<_TripListView> {
         onRefresh: viewModel.load,
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: viewModel.trips.length,
+          itemCount: trips.length,
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final trip = viewModel.trips[index];
+            final trip = trips[index];
             return Card(
               child: ListTile(
                 contentPadding: const EdgeInsets.all(16),
@@ -185,7 +228,37 @@ class _TripListViewState extends State<_TripListView> {
               label: const Text('Sefer Ekle'),
             )
           : null,
-      body: body,
+      body: Column(
+        children: [
+          filterBar,
+          if (companyHintMessage != null) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(companyHintMessage),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: _openCompanyForm,
+                          icon: const Icon(Icons.apartment_outlined),
+                          label: const Text('Firma Bilgileri'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+          Expanded(child: body),
+        ],
+      ),
     );
   }
 }
