@@ -71,14 +71,10 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AuthRepository>(create: (_) => AuthRepository()),
-        Provider<CompanyRepository>(
-          create: (context) =>
-              CompanyRepository(authRepository: context.read<AuthRepository>()),
-        ),
+        Provider<CompanyRepository>(create: (_) => CompanyRepository()),
         Provider<TripRepository>(
           create: (context) => TripRepository(
             companyRepository: context.read<CompanyRepository>(),
-            authRepository: context.read<AuthRepository>(),
           ),
         ),
         Provider<ReservationRepository>(create: (_) => ReservationRepository()),

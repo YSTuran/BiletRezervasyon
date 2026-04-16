@@ -1,5 +1,6 @@
 import '../../../../core/presentation/view_models/base_view_model.dart';
 import '../../../../models/enums.dart';
+import '../../../company/data/repositories/company_repository.dart';
 import '../../data/repositories/trip_repository.dart';
 import '../../domain/models/trip.dart';
 
@@ -14,12 +15,32 @@ class TripCreateViewModel extends BaseViewModel {
     : _repository = repository;
 
   final TripRepository _repository;
+  bool _hasLoaded = false;
+  String? _loadErrorMessage;
 
+  bool get hasLoaded => _hasLoaded;
   TransportType? get transportType => _repository.currentOfficerTransportType;
   bool get canCreateTrip => _repository.canCurrentOfficerCreateTrips;
   String get blockedMessage =>
+      _loadErrorMessage ??
       _repository.currentOfficerTripCreationBlockMessage ??
       'Sefer olusturulamiyor.';
+
+  Future<void> load() async {
+    if (isBusy || _hasLoaded) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await _repository.refreshCurrentOfficerCompany();
+    } on CompanyActionException catch (error) {
+      _loadErrorMessage = error.message;
+    } finally {
+      _hasLoaded = true;
+      setBusy(false);
+    }
+  }
 
   Future<Trip?> createTrip({
     required String origin,
@@ -74,6 +95,10 @@ class TripCreateViewModel extends BaseViewModel {
         seatCapacity: seatCapacity,
         priceMinor: priceMinor,
       );
+    } on TripActionException catch (error) {
+      throw TripFormException(error.message);
+    } on CompanyActionException catch (error) {
+      throw TripFormException(error.message);
     } finally {
       setBusy(false);
     }

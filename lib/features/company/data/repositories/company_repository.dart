@@ -1,85 +1,79 @@
+import 'package:cloud_functions/cloud_functions.dart';
+
+import '../../../../core/data/services/postgres_callable_service.dart';
 import '../../../../models/enums.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
 import '../../domain/models/company.dart';
 
 class CompanyRepository {
-  CompanyRepository({required AuthRepository authRepository})
-    : _authRepository = authRepository;
+  CompanyRepository();
 
-  final AuthRepository _authRepository;
-  final List<Company> _companies = [];
+  final Map<String, Company> _companyCache = <String, Company>{};
+  Company? _currentOfficerCompany;
 
-  Company? get currentOfficerCompany {
-    final officerUserId = _authRepository.resolveCurrentUserId();
-    if (officerUserId == null || officerUserId.isEmpty) {
-      return null;
-    }
-    return findCompanyByOfficerId(officerUserId);
-  }
+  Company? get currentOfficerCompany => _currentOfficerCompany;
 
   bool get currentOfficerHasApprovedCompany =>
       currentOfficerCompany?.status == ApprovalStatus.approved;
 
   Future<List<Company>> fetchCompanies({ApprovalStatus? status}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'listCompanies',
+        data: {if (status != null) 'status': status.value},
+      );
 
-    final filteredCompanies = status == null
-        ? List<Company>.from(_companies)
-        : _companies.where((company) => company.status == status).toList();
-
-    filteredCompanies.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    return List<Company>.unmodifiable(filteredCompanies);
+      final companies = _parseCompanies(response['companies']);
+      for (final company in companies) {
+        _companyCache[company.id] = company;
+      }
+      return companies;
+    } on FirebaseFunctionsException catch (error) {
+      throw CompanyActionException(_mapCompanyError(error.code, error.message));
+    }
   }
 
   Future<Company?> fetchCurrentOfficerCompany() async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    return currentOfficerCompany;
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'getMyCompany',
+      );
+      final company = _parseCompany(response['company']);
+      _currentOfficerCompany = company;
+      if (company != null) {
+        _companyCache[company.id] = company;
+      }
+      return company;
+    } on FirebaseFunctionsException catch (error) {
+      throw CompanyActionException(_mapCompanyError(error.code, error.message));
+    }
   }
 
   Future<Company> saveCurrentOfficerCompany({
     required String name,
     required TransportType transportType,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 180));
-
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
       throw const CompanyActionException('Firma adi zorunludur.');
     }
 
-    final officerUserId = _requireCurrentUserId();
-    final now = DateTime.now();
-    final existingCompany = findCompanyByOfficerId(officerUserId);
-
-    if (existingCompany == null) {
-      final createdCompany = Company(
-        id: 'company-${now.microsecondsSinceEpoch}',
-        name: trimmedName,
-        officerUserId: officerUserId,
-        transportType: transportType,
-        status: ApprovalStatus.pending,
-        createdAt: now,
-        updatedAt: now,
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'upsertCompanyProfile',
+        data: {'name': trimmedName, 'transportType': transportType.value},
       );
-      _companies.add(createdCompany);
-      return createdCompany;
+
+      final company = _parseCompany(response['company']);
+      if (company == null) {
+        throw const CompanyActionException('Firma kaydi olusturulamadi.');
+      }
+
+      _currentOfficerCompany = company;
+      _companyCache[company.id] = company;
+      return company;
+    } on FirebaseFunctionsException catch (error) {
+      throw CompanyActionException(_mapCompanyError(error.code, error.message));
     }
-
-    final updatedCompany = existingCompany.copyWith(
-      name: trimmedName,
-      transportType: transportType,
-      status: ApprovalStatus.pending,
-      reviewedByAdminId: null,
-      reviewedAt: null,
-      rejectionReason: null,
-      updatedAt: now,
-    );
-
-    final index = _companies.indexWhere(
-      (company) => company.id == existingCompany.id,
-    );
-    _companies[index] = updatedCompany;
-    return updatedCompany;
   }
 
   Future<Company?> approveCompany(String companyId) async {
@@ -106,16 +100,11 @@ class CompanyRepository {
   }
 
   Company? findCompanyById(String companyId) {
-    for (final company in _companies) {
-      if (company.id == companyId) {
-        return company;
-      }
-    }
-    return null;
+    return _companyCache[companyId];
   }
 
   Company? findCompanyByOfficerId(String officerUserId) {
-    for (final company in _companies) {
+    for (final company in _companyCache.values) {
       if (company.officerUserId == officerUserId) {
         return company;
       }
@@ -123,41 +112,81 @@ class CompanyRepository {
     return null;
   }
 
-  String _requireCurrentUserId() {
-    final userId = _authRepository.resolveCurrentUserId();
-    if (userId == null || userId.isEmpty) {
-      throw const CompanyActionException('Aktif kullanici bulunamadi.');
-    }
-    return userId;
-  }
-
   Future<Company?> _reviewCompany({
     required String companyId,
     required ApprovalStatus status,
     String? rejectionReason,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 150));
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'reviewCompany',
+        data: {
+          'companyId': companyId,
+          'status': status.value,
+          ...?rejectionReason == null
+              ? null
+              : {'rejectionReason': rejectionReason},
+        },
+      );
 
-    final index = _companies.indexWhere((company) => company.id == companyId);
-    if (index < 0) {
+      final company = _parseCompany(response['company']);
+      if (company != null) {
+        _companyCache[company.id] = company;
+        if (_currentOfficerCompany?.id == company.id) {
+          _currentOfficerCompany = company;
+        }
+      }
+      return company;
+    } on FirebaseFunctionsException catch (error) {
+      throw CompanyActionException(_mapCompanyError(error.code, error.message));
+    }
+  }
+
+  Company? _parseCompany(dynamic value) {
+    if (value is! Map) {
       return null;
     }
+    return Company.fromJson(_toMap(value));
+  }
 
-    final reviewerId = _requireCurrentUserId();
-    final currentCompany = _companies[index];
-    final now = DateTime.now();
-    final updatedCompany = currentCompany.copyWith(
-      status: status,
-      reviewedByAdminId: reviewerId,
-      reviewedAt: now,
-      rejectionReason: status == ApprovalStatus.rejected
-          ? rejectionReason
-          : null,
-      updatedAt: now,
-    );
+  List<Company> _parseCompanies(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value
+        .whereType<Map>()
+        .map((company) => Company.fromJson(_toMap(company)))
+        .toList();
+  }
 
-    _companies[index] = updatedCompany;
-    return updatedCompany;
+  Map<String, dynamic> _toMap(Map value) {
+    return value.map((key, data) => MapEntry('$key', data));
+  }
+
+  String _mapCompanyError(String code, String? message) {
+    final trimmedMessage = (message ?? '').trim();
+
+    switch (code) {
+      case 'not-found':
+        return 'Firma kaydi bulunamadi.';
+      case 'permission-denied':
+        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+      case 'failed-precondition':
+      case 'invalid-argument':
+      case 'internal':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Firma islemi tamamlanamadi.';
+      default:
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Firma islemi tamamlanamadi.';
+    }
   }
 }
 

@@ -1,21 +1,18 @@
+import 'package:cloud_functions/cloud_functions.dart';
+
+import '../../../../core/data/services/postgres_callable_service.dart';
 import '../../../../models/enums.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../company/data/repositories/company_repository.dart';
 import '../../../company/domain/models/company.dart';
 import '../../domain/models/trip.dart';
 import '../../domain/models/trip_seat.dart';
 
 class TripRepository {
-  TripRepository({
-    required CompanyRepository companyRepository,
-    required AuthRepository authRepository,
-  }) : _companyRepository = companyRepository,
-       _authRepository = authRepository;
+  TripRepository({required CompanyRepository companyRepository})
+    : _companyRepository = companyRepository;
 
   final CompanyRepository _companyRepository;
-  final AuthRepository _authRepository;
-  final List<Trip> _trips = [];
-  final List<TripSeat> _tripSeats = [];
+  final Map<String, List<TripSeat>> _seatCache = <String, List<TripSeat>>{};
 
   Company? get currentOfficerCompany =>
       _companyRepository.currentOfficerCompany;
@@ -41,42 +38,53 @@ class TripRepository {
     };
   }
 
+  Future<void> refreshCurrentOfficerCompany() async {
+    await _companyRepository.fetchCurrentOfficerCompany();
+  }
+
   Future<List<Trip>> fetchTrips({required UserRole role}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+    if (role == UserRole.companyOfficer) {
+      await refreshCurrentOfficerCompany();
+    }
 
-    final filteredTrips = switch (role) {
-      UserRole.normalUser =>
-        _trips.where((trip) => trip.status == TripStatus.approved).toList(),
-      UserRole.companyOfficer =>
-        currentOfficerCompany == null
-            ? <Trip>[]
-            : _trips
-                  .where((trip) => trip.companyId == currentOfficerCompany!.id)
-                  .toList(),
-      UserRole.admin => List<Trip>.from(_trips),
-    };
-
-    filteredTrips.sort((a, b) => a.departureAt.compareTo(b.departureAt));
-    return filteredTrips;
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'listTrips',
+      );
+      return _parseTrips(response['trips']);
+    } on FirebaseFunctionsException catch (error) {
+      throw TripActionException(_mapTripError(error.code, error.message));
+    }
   }
 
   Future<Trip?> fetchTripById(String tripId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 150));
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'getTripDetail',
+        data: {'tripId': tripId},
+      );
 
-    for (final trip in _trips) {
-      if (trip.id == tripId) {
-        return trip;
+      final trip = _parseTrip(response['trip']);
+      final seats = _parseSeats(response['seats']);
+      if (trip == null) {
+        _seatCache.remove(tripId);
+      } else {
+        _seatCache[tripId] = seats;
       }
+      return trip;
+    } on FirebaseFunctionsException catch (error) {
+      throw TripActionException(_mapTripError(error.code, error.message));
     }
-    return null;
   }
 
   Future<List<TripSeat>> fetchTripSeats({required String tripId}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
+    final cachedSeats = _seatCache[tripId];
+    if (cachedSeats != null) {
+      return cachedSeats;
+    }
 
-    final seats = _tripSeats.where((seat) => seat.tripId == tripId).toList();
-    seats.sort((a, b) => a.seatNumber.compareTo(b.seatNumber));
-    return seats;
+    await fetchTripById(tripId);
+    return _seatCache[tripId] ?? const [];
   }
 
   Future<Trip> createTrip({
@@ -88,41 +96,48 @@ class TripRepository {
     required int seatCapacity,
     required int priceMinor,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-
+    await refreshCurrentOfficerCompany();
     final company = currentOfficerCompany;
     if (company == null) {
-      throw StateError('Firma bilgisi bulunamadigi icin sefer olusturulamadi.');
+      throw const TripActionException(
+        'Firma bilgisi bulunamadigi icin sefer olusturulamadi.',
+      );
     }
     if (company.status != ApprovalStatus.approved) {
-      throw StateError('Firma bilgileri onaylanmadan sefer olusturulamaz.');
+      throw const TripActionException(
+        'Firma bilgileri onaylanmadan sefer olusturulamaz.',
+      );
     }
     if (transportType != company.transportType) {
-      throw StateError('Firma sadece tek bir ulasim tipi icin sefer acabilir.');
+      throw const TripActionException(
+        'Firma sadece tek bir ulasim tipi icin sefer acabilir.',
+      );
     }
 
-    final now = DateTime.now();
-    final tripId = 'trip-${now.microsecondsSinceEpoch}';
-    final trip = Trip(
-      id: tripId,
-      companyId: company.id,
-      createdByOfficerId: company.officerUserId,
-      transportType: transportType,
-      tripCode: _generateTripCode(transportType, departureAt),
-      origin: origin.trim(),
-      destination: destination.trim(),
-      departureAt: departureAt,
-      arrivalAt: arrivalAt,
-      seatCapacity: seatCapacity,
-      priceMinor: priceMinor,
-      status: TripStatus.pendingApproval,
-      createdAt: now,
-      updatedAt: now,
-    );
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'createTrip',
+        data: {
+          'transportType': transportType.value,
+          'origin': origin.trim(),
+          'destination': destination.trim(),
+          'departureAt': departureAt.toIso8601String(),
+          'arrivalAt': arrivalAt.toIso8601String(),
+          'seatCapacity': seatCapacity,
+          'priceMinor': priceMinor,
+        },
+      );
 
-    _trips.add(trip);
-    _tripSeats.addAll(_buildSeatsForTrip(trip));
-    return trip;
+      final trip = _parseTrip(response['trip']);
+      if (trip == null) {
+        throw const TripActionException('Sefer olusturulamadi.');
+      }
+
+      _seatCache[trip.id] = _parseSeats(response['seats']);
+      return trip;
+    } on FirebaseFunctionsException catch (error) {
+      throw TripActionException(_mapTripError(error.code, error.message));
+    }
   }
 
   Future<Trip?> approveTrip({required String tripId}) async {
@@ -140,60 +155,88 @@ class TripRepository {
     );
   }
 
-  List<TripSeat> _buildSeatsForTrip(Trip trip) {
-    return List.generate(trip.seatCapacity, (index) {
-      final seatNumber = '${index + 1}'.padLeft(2, '0');
-      return TripSeat(
-        id: '${trip.id}-seat-$seatNumber',
-        tripId: trip.id,
-        seatNumber: seatNumber,
-        createdAt: trip.createdAt,
-      );
-    });
-  }
-
-  String _generateTripCode(TransportType transportType, DateTime departureAt) {
-    final prefix = switch (transportType) {
-      TransportType.bus => 'BUS',
-      TransportType.flight => 'FLT',
-    };
-    final month = '${departureAt.month}'.padLeft(2, '0');
-    final day = '${departureAt.day}'.padLeft(2, '0');
-    final serial = (_trips.length + 1).toString().padLeft(2, '0');
-    return '$prefix-$month$day-$serial';
-  }
-
   Future<Trip?> _reviewTrip({
     required String tripId,
     required TripStatus status,
     String? rejectionReason,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 180));
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'reviewTrip',
+        data: {
+          'tripId': tripId,
+          'status': status.value,
+          ...?rejectionReason == null
+              ? null
+              : {'rejectionReason': rejectionReason},
+        },
+      );
+      return _parseTrip(response['trip']);
+    } on FirebaseFunctionsException catch (error) {
+      throw TripActionException(_mapTripError(error.code, error.message));
+    }
+  }
 
-    final index = _trips.indexWhere((trip) => trip.id == tripId);
-    if (index < 0) {
+  Trip? _parseTrip(dynamic value) {
+    if (value is! Map) {
       return null;
     }
-
-    final currentTrip = _trips[index];
-    final now = DateTime.now();
-    final reviewerId = _authRepository.resolveCurrentUserId();
-    if (reviewerId == null || reviewerId.isEmpty) {
-      throw StateError(
-        'Aktif kullanici bulunamadigi icin islem tamamlanamadi.',
-      );
-    }
-    final updatedTrip = currentTrip.copyWith(
-      status: status,
-      reviewedByAdminId: reviewerId,
-      reviewedAt: now,
-      rejectionReason: status == TripStatus.rejected
-          ? rejectionReason?.trim()
-          : null,
-      updatedAt: now,
-    );
-
-    _trips[index] = updatedTrip;
-    return updatedTrip;
+    return Trip.fromJson(_toMap(value));
   }
+
+  List<Trip> _parseTrips(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value
+        .whereType<Map>()
+        .map((trip) => Trip.fromJson(_toMap(trip)))
+        .toList();
+  }
+
+  List<TripSeat> _parseSeats(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value
+        .whereType<Map>()
+        .map((seat) => TripSeat.fromJson(_toMap(seat)))
+        .toList();
+  }
+
+  Map<String, dynamic> _toMap(Map value) {
+    return value.map((key, data) => MapEntry('$key', data));
+  }
+
+  String _mapTripError(String code, String? message) {
+    final trimmedMessage = (message ?? '').trim();
+
+    switch (code) {
+      case 'not-found':
+        return 'Sefer bulunamadi.';
+      case 'permission-denied':
+        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+      case 'failed-precondition':
+      case 'invalid-argument':
+      case 'internal':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sefer islemi tamamlanamadi.';
+      default:
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sefer islemi tamamlanamadi.';
+    }
+  }
+}
+
+class TripActionException implements Exception {
+  const TripActionException(this.message);
+
+  final String message;
 }

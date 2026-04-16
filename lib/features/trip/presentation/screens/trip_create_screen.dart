@@ -23,7 +23,8 @@ class TripCreateScreen extends StatelessWidget {
 
     return ChangeNotifierProvider(
       create: (context) =>
-          TripCreateViewModel(repository: context.read<TripRepository>()),
+          TripCreateViewModel(repository: context.read<TripRepository>())
+            ..load(),
       child: const _TripCreateView(),
     );
   }
@@ -164,6 +165,10 @@ class _TripCreateViewState extends State<_TripCreateView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripCreateViewModel>();
+
+    if (!viewModel.hasLoaded && viewModel.isBusy) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     if (!viewModel.canCreateTrip || viewModel.transportType == null) {
       return Scaffold(
