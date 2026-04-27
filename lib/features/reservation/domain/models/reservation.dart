@@ -14,6 +14,14 @@ class Reservation {
     this.rejectionReason,
     this.paidAt,
     this.cancelledAt,
+    this.seatNumber,
+    this.tripCode,
+    this.tripOrigin,
+    this.tripDestination,
+    this.tripDepartureAt,
+    this.tripArrivalAt,
+    this.tripTransportType,
+    this.companyName,
   });
 
   final String id;
@@ -28,6 +36,14 @@ class Reservation {
   final String? rejectionReason;
   final DateTime? paidAt;
   final DateTime? cancelledAt;
+  final String? seatNumber;
+  final String? tripCode;
+  final String? tripOrigin;
+  final String? tripDestination;
+  final DateTime? tripDepartureAt;
+  final DateTime? tripArrivalAt;
+  final TransportType? tripTransportType;
+  final String? companyName;
 
   bool get blocksSeat => status.blocksSeat;
 
@@ -47,6 +63,14 @@ class Reservation {
     String? rejectionReason,
     DateTime? paidAt,
     DateTime? cancelledAt,
+    String? seatNumber,
+    String? tripCode,
+    String? tripOrigin,
+    String? tripDestination,
+    DateTime? tripDepartureAt,
+    DateTime? tripArrivalAt,
+    TransportType? tripTransportType,
+    String? companyName,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -61,6 +85,14 @@ class Reservation {
       rejectionReason: rejectionReason ?? this.rejectionReason,
       paidAt: paidAt ?? this.paidAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
+      seatNumber: seatNumber ?? this.seatNumber,
+      tripCode: tripCode ?? this.tripCode,
+      tripOrigin: tripOrigin ?? this.tripOrigin,
+      tripDestination: tripDestination ?? this.tripDestination,
+      tripDepartureAt: tripDepartureAt ?? this.tripDepartureAt,
+      tripArrivalAt: tripArrivalAt ?? this.tripArrivalAt,
+      tripTransportType: tripTransportType ?? this.tripTransportType,
+      companyName: companyName ?? this.companyName,
     );
   }
 
@@ -78,6 +110,14 @@ class Reservation {
       'rejection_reason': rejectionReason,
       'paid_at': paidAt?.toIso8601String(),
       'cancelled_at': cancelledAt?.toIso8601String(),
+      'seat_number': seatNumber,
+      'trip_code': tripCode,
+      'trip_origin': tripOrigin,
+      'trip_destination': tripDestination,
+      'trip_departure_at': tripDepartureAt?.toIso8601String(),
+      'trip_arrival_at': tripArrivalAt?.toIso8601String(),
+      'trip_transport_type': tripTransportType?.value,
+      'company_name': companyName,
     };
   }
 
@@ -101,6 +141,20 @@ class Reservation {
       cancelledAt: json['cancelled_at'] == null
           ? null
           : DateTime.parse(json['cancelled_at'] as String),
+      seatNumber: json['seat_number'] as String?,
+      tripCode: json['trip_code'] as String?,
+      tripOrigin: json['trip_origin'] as String?,
+      tripDestination: json['trip_destination'] as String?,
+      tripDepartureAt: json['trip_departure_at'] == null
+          ? null
+          : DateTime.parse(json['trip_departure_at'] as String),
+      tripArrivalAt: json['trip_arrival_at'] == null
+          ? null
+          : DateTime.parse(json['trip_arrival_at'] as String),
+      tripTransportType: json['trip_transport_type'] == null
+          ? null
+          : TransportType.fromValue(json['trip_transport_type'] as String),
+      companyName: json['company_name'] as String?,
     );
   }
 }

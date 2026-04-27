@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
 
@@ -60,6 +61,19 @@ class _RoleHomeView extends StatelessWidget {
                 },
                 icon: const Icon(Icons.map_outlined),
                 label: Text(viewModel.tripButtonLabel),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.reservationList,
+                    arguments: const ReservationListArguments(
+                      role: UserRole.normalUser,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.confirmation_number_outlined),
+                label: const Text('Rezervasyonlarim'),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
 
@@ -66,6 +67,19 @@ class _RoleHomeView extends StatelessWidget {
                 },
                 icon: const Icon(Icons.apartment_outlined),
                 label: const Text('Firmalari Yonet'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.reservationList,
+                    arguments: const ReservationListArguments(
+                      role: UserRole.admin,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('Rezervasyonlari Gor'),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(

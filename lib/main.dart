@@ -17,6 +17,8 @@ import 'features/home/presentation/screens/normal_user_home_screen.dart';
 import 'features/payment/data/repositories/payment_repository.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/reservation/data/repositories/reservation_repository.dart';
+import 'features/reservation/presentation/models/reservation_route_arguments.dart';
+import 'features/reservation/presentation/screens/reservation_list_screen.dart';
 import 'features/trip/data/repositories/trip_repository.dart';
 import 'features/trip/presentation/models/trip_route_arguments.dart';
 import 'features/trip/presentation/screens/trip_create_screen.dart';
@@ -129,6 +131,18 @@ class MainApp extends StatelessWidget {
               return MaterialPageRoute<void>(
                 settings: settings,
                 builder: (_) => TripCreateScreen(arguments: arguments),
+              );
+            case AppRoutes.reservationList:
+              final arguments = settings.arguments;
+              if (arguments is! ReservationListArguments) {
+                return _buildRouteError(
+                  settings,
+                  'Rezervasyon listesi acilamadi.',
+                );
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => ReservationListScreen(arguments: arguments),
               );
             default:
               return null;

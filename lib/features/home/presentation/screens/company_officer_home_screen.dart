@@ -7,6 +7,7 @@ import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../company/data/repositories/company_repository.dart';
 import '../../../company/domain/models/company.dart';
 import '../../../company/presentation/helpers/company_presentation_helper.dart';
+import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
 
@@ -195,6 +196,19 @@ class _RoleHomeViewState extends State<_RoleHomeView> {
                   },
                   icon: const Icon(Icons.route_outlined),
                   label: Text(viewModel.tripButtonLabel),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.reservationList,
+                      arguments: const ReservationListArguments(
+                        role: UserRole.companyOfficer,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('Rezervasyon Talepleri'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
