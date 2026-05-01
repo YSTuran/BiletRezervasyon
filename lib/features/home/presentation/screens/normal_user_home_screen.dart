@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../payment/presentation/models/payment_route_arguments.dart';
 import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
@@ -74,6 +75,19 @@ class _RoleHomeView extends StatelessWidget {
                 },
                 icon: const Icon(Icons.confirmation_number_outlined),
                 label: const Text('Rezervasyonlarim'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.paymentList,
+                    arguments: const PaymentListArguments(
+                      role: UserRole.normalUser,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.credit_card_outlined),
+                label: const Text('Odemelerim'),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(

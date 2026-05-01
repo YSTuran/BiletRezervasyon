@@ -332,6 +332,34 @@ function buildReservationSelectClause(tripTransportTypeExpression, reservationAl
   `;
 }
 
+function buildPaymentSelectClause(
+    tripTransportTypeExpression,
+    paymentAlias = "p",
+) {
+  const prefix = paymentAlias ? `${paymentAlias}.` : "";
+  return `
+    ${prefix}id,
+    ${prefix}reservation_id,
+    ${prefix}amount_minor,
+    ${prefix}status,
+    ${prefix}provider,
+    NULL::text AS provider_payment_id,
+    ${prefix}created_at,
+    ${prefix}updated_at,
+    ${prefix}paid_at,
+    r.status AS reservation_status,
+    r.payment_deadline_at,
+    ts.seat_number,
+    t.trip_code,
+    t.origin AS trip_origin,
+    t.destination AS trip_destination,
+    t.departure_at AS trip_departure_at,
+    t.arrival_at AS trip_arrival_at,
+    ${tripTransportTypeExpression} AS trip_transport_type,
+    c.name AS company_name
+  `;
+}
+
 async function syncUserCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
@@ -724,6 +752,33 @@ function serializeReservationRow(row) {
   };
 }
 
+function serializePaymentRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    reservation_id: row.reservation_id,
+    amount_minor: row.amount_minor,
+    status: row.status,
+    provider: row.provider,
+    provider_payment_id: row.provider_payment_id,
+    created_at: serializeDate(row.created_at),
+    updated_at: serializeDate(row.updated_at),
+    paid_at: serializeDate(row.paid_at),
+    reservation_status: row.reservation_status,
+    payment_deadline_at: serializeDate(row.payment_deadline_at),
+    seat_number: row.seat_number,
+    trip_code: row.trip_code,
+    trip_origin: row.trip_origin,
+    trip_destination: row.trip_destination,
+    trip_departure_at: serializeDate(row.trip_departure_at),
+    trip_arrival_at: serializeDate(row.trip_arrival_at),
+    trip_transport_type: row.trip_transport_type,
+    company_name: row.company_name,
+  };
+}
+
 function normalizeTrimmedString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -988,6 +1043,176 @@ async function loadAccessibleReservationRow(
         INNER JOIN companies c ON c.id = t.company_id
         WHERE r.id = $1
           AND r.user_id = $2
+        LIMIT 1
+      `,
+      [reservationId, appUser.id],
+  );
+  return result.rows[0] ?? null;
+}
+
+async function expireOverdueReservations(client) {
+  await client.query(
+      `
+        UPDATE reservations r
+        SET
+          status = 'expired'::reservation_status,
+          updated_at = now()
+        WHERE r.status = 'approved'::reservation_status
+          AND r.payment_deadline_at < now()
+          AND NOT EXISTS (
+            SELECT 1
+            FROM payments p
+            WHERE p.reservation_id = r.id
+              AND p.status = 'paid'::payment_status
+          )
+      `,
+  );
+
+  await client.query(
+      `
+        UPDATE payments p
+        SET
+          status = 'failed'::payment_status,
+          updated_at = now()
+        WHERE p.status = 'pending'::payment_status
+          AND EXISTS (
+            SELECT 1
+            FROM reservations r
+            WHERE r.id = p.reservation_id
+              AND r.status = 'expired'::reservation_status
+          )
+      `,
+  );
+}
+
+async function ensurePendingPaymentForReservation(client, reservationId) {
+  const existingPaymentResult = await client.query(
+      `
+        SELECT id
+        FROM payments
+        WHERE reservation_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      [reservationId],
+  );
+  if (existingPaymentResult.rows.length > 0) {
+    return existingPaymentResult.rows[0].id;
+  }
+
+  const reservationResult = await client.query(
+      `
+        SELECT r.id, t.price_minor
+        FROM reservations r
+        INNER JOIN trips t ON t.id = r.trip_id
+        WHERE r.id = $1
+          AND r.status = 'approved'::reservation_status
+        LIMIT 1
+      `,
+      [reservationId],
+  );
+  if (reservationResult.rows.length === 0) {
+    return null;
+  }
+
+  const row = reservationResult.rows[0];
+  const paymentId = randomUUID();
+  await client.query(
+      `
+        INSERT INTO payments (
+          id,
+          reservation_id,
+          amount_minor,
+          status,
+          provider,
+          created_at,
+          updated_at,
+          paid_at
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          'pending'::payment_status,
+          'fake_gateway',
+          now(),
+          now(),
+          NULL
+        )
+      `,
+      [paymentId, row.id, row.price_minor],
+  );
+  return paymentId;
+}
+
+async function loadAccessiblePaymentRowByReservationId(
+    client,
+    appUser,
+    reservationId,
+    createError,
+) {
+  const transportTypeColumn = await resolveTripTransportTypeColumn(
+      client,
+      createError,
+  );
+  const selectClause = buildPaymentSelectClause(
+      `t.${quoteIdentifier(transportTypeColumn)}`,
+  );
+
+  if (appUser.role === "admin") {
+    const result = await client.query(
+        `
+          SELECT ${selectClause}
+          FROM payments p
+          INNER JOIN reservations r ON r.id = p.reservation_id
+          INNER JOIN trip_seats ts
+            ON ts.id = r.trip_seat_id
+           AND ts.trip_id = r.trip_id
+          INNER JOIN trips t ON t.id = r.trip_id
+          INNER JOIN companies c ON c.id = t.company_id
+          WHERE p.reservation_id = $1
+          ORDER BY p.created_at DESC
+          LIMIT 1
+        `,
+        [reservationId],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  if (appUser.role === "company_officer") {
+    const result = await client.query(
+        `
+          SELECT ${selectClause}
+          FROM payments p
+          INNER JOIN reservations r ON r.id = p.reservation_id
+          INNER JOIN trip_seats ts
+            ON ts.id = r.trip_seat_id
+           AND ts.trip_id = r.trip_id
+          INNER JOIN trips t ON t.id = r.trip_id
+          INNER JOIN companies c ON c.id = t.company_id
+          WHERE p.reservation_id = $1
+            AND c.officer_user_id = $2
+          ORDER BY p.created_at DESC
+          LIMIT 1
+        `,
+        [reservationId, appUser.id],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  const result = await client.query(
+      `
+        SELECT ${selectClause}
+        FROM payments p
+        INNER JOIN reservations r ON r.id = p.reservation_id
+        INNER JOIN trip_seats ts
+          ON ts.id = r.trip_seat_id
+         AND ts.trip_id = r.trip_id
+        INNER JOIN trips t ON t.id = r.trip_id
+        INNER JOIN companies c ON c.id = t.company_id
+        WHERE p.reservation_id = $1
+          AND r.user_id = $2
+        ORDER BY p.created_at DESC
         LIMIT 1
       `,
       [reservationId, appUser.id],
@@ -1527,6 +1752,7 @@ async function listReservationsCore({auth, data, createError}) {
   return withClient(
       {createError, actionLabel: "Rezervasyon listeleme"},
       async (client) => {
+        await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
         const transportTypeColumn = await resolveTripTransportTypeColumn(
             client,
@@ -1610,6 +1836,7 @@ async function getTripReservationAvailabilityCore({auth, data, createError}) {
   return withClient(
       {createError, actionLabel: "Rezervasyon uygunlugu getirme"},
       async (client) => {
+        await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
         const trip = await loadAccessibleTripRow(
             client,
@@ -1679,6 +1906,7 @@ async function createReservationCore({auth, data, createError}) {
   return withClient(
       {createError, actionLabel: "Rezervasyon olusturma"},
       async (client) => {
+        await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
         assertAllowedRoles(appUser, ["normal_user"], createError);
 
@@ -1839,6 +2067,17 @@ async function cancelReservationCore({auth, data, createError}) {
             `,
             [reservationId, appUser.id],
         );
+        await client.query(
+            `
+              UPDATE payments
+              SET
+                status = 'failed'::payment_status,
+                updated_at = now()
+              WHERE reservation_id = $1
+                AND status = 'pending'::payment_status
+            `,
+            [reservationId],
+        );
 
         const updatedReservation = await loadAccessibleReservationRow(
             client,
@@ -1900,28 +2139,153 @@ async function reviewReservationCore({auth, data, createError}) {
           );
         }
 
-        await client.query(
-            `
-              UPDATE reservations
-              SET
-                status = $2::reservation_status,
-                payment_deadline_at = CASE
-                  WHEN $2::reservation_status = 'approved'::reservation_status
-                    THEN now() + interval '30 minutes'
-                  ELSE payment_deadline_at
-                END,
-                rejection_reason = CASE
-                  WHEN $2::reservation_status = 'rejected'::reservation_status THEN $3
-                  ELSE NULL
-                END,
-                updated_at = now()
-              WHERE id = $1
-                AND status = 'pending_approval'::reservation_status
-            `,
-            [reservationId, status, rejectionReason || null],
+        const updatedReservation = await withTransaction(client, async () => {
+          await client.query(
+              `
+                UPDATE reservations
+                SET
+                  status = $2::reservation_status,
+                  payment_deadline_at = CASE
+                    WHEN $2::reservation_status = 'approved'::reservation_status
+                      THEN now() + interval '30 minutes'
+                    ELSE payment_deadline_at
+                  END,
+                  rejection_reason = CASE
+                    WHEN $2::reservation_status = 'rejected'::reservation_status THEN $3
+                    ELSE NULL
+                  END,
+                  updated_at = now()
+                WHERE id = $1
+                  AND status = 'pending_approval'::reservation_status
+              `,
+              [reservationId, status, rejectionReason || null],
+          );
+
+          if (status === "approved") {
+            await ensurePendingPaymentForReservation(client, reservationId);
+          }
+
+          return loadAccessibleReservationRow(
+              client,
+              appUser,
+              reservationId,
+              createError,
+          );
+        });
+
+        return {
+          reservation: serializeReservationRow(updatedReservation),
+        };
+      },
+  );
+}
+
+async function listPaymentsCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+  }
+
+  return withClient(
+      {createError, actionLabel: "Odeme listeleme"},
+      async (client) => {
+        await expireOverdueReservations(client);
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        const transportTypeColumn = await resolveTripTransportTypeColumn(
+            client,
+            createError,
+        );
+        const selectClause = buildPaymentSelectClause(
+            `t.${quoteIdentifier(transportTypeColumn)}`,
         );
 
-        const updatedReservation = await loadAccessibleReservationRow(
+        let result;
+        if (appUser.role === "admin") {
+          result = await client.query(
+              `
+                SELECT ${selectClause}
+                FROM payments p
+                INNER JOIN reservations r ON r.id = p.reservation_id
+                INNER JOIN trip_seats ts
+                  ON ts.id = r.trip_seat_id
+                 AND ts.trip_id = r.trip_id
+                INNER JOIN trips t ON t.id = r.trip_id
+                INNER JOIN companies c ON c.id = t.company_id
+                ORDER BY p.created_at DESC
+              `,
+          );
+        } else if (appUser.role === "company_officer") {
+          result = await client.query(
+              `
+                SELECT ${selectClause}
+                FROM payments p
+                INNER JOIN reservations r ON r.id = p.reservation_id
+                INNER JOIN trip_seats ts
+                  ON ts.id = r.trip_seat_id
+                 AND ts.trip_id = r.trip_id
+                INNER JOIN trips t ON t.id = r.trip_id
+                INNER JOIN companies c ON c.id = t.company_id
+                WHERE c.officer_user_id = $1
+                ORDER BY p.created_at DESC
+              `,
+              [appUser.id],
+          );
+        } else {
+          result = await client.query(
+              `
+                SELECT ${selectClause}
+                FROM payments p
+                INNER JOIN reservations r ON r.id = p.reservation_id
+                INNER JOIN trip_seats ts
+                  ON ts.id = r.trip_seat_id
+                 AND ts.trip_id = r.trip_id
+                INNER JOIN trips t ON t.id = r.trip_id
+                INNER JOIN companies c ON c.id = t.company_id
+                WHERE r.user_id = $1
+                ORDER BY p.created_at DESC
+              `,
+              [appUser.id],
+          );
+        }
+
+        return {
+          payments: result.rows.map(serializePaymentRow),
+        };
+      },
+  );
+}
+
+async function getReservationPaymentCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+  }
+
+  const reservationId = normalizeTrimmedString(data?.reservationId);
+  if (!reservationId) {
+    throw createError("invalid-argument", "reservationId zorunludur.");
+  }
+
+  return withClient(
+      {createError, actionLabel: "Odeme bilgisi getirme"},
+      async (client) => {
+        await expireOverdueReservations(client);
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        const reservation = await loadAccessibleReservationRow(
+            client,
+            appUser,
+            reservationId,
+            createError,
+        );
+        if (!reservation) {
+          throw createError("not-found", "Rezervasyon bulunamadi.");
+        }
+
+        if (reservation.status === "approved") {
+          await ensurePendingPaymentForReservation(client, reservationId);
+        }
+
+        const payment = await loadAccessiblePaymentRowByReservationId(
             client,
             appUser,
             reservationId,
@@ -1929,7 +2293,156 @@ async function reviewReservationCore({auth, data, createError}) {
         );
 
         return {
-          reservation: serializeReservationRow(updatedReservation),
+          payment: serializePaymentRow(payment),
+        };
+      },
+  );
+}
+
+async function processFakePaymentCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+  }
+
+  const reservationId = normalizeTrimmedString(data?.reservationId);
+  if (!reservationId) {
+    throw createError("invalid-argument", "reservationId zorunludur.");
+  }
+
+  const cardHolderName = normalizeTrimmedString(data?.cardHolderName);
+  const cardNumber = normalizeTrimmedString(data?.cardNumber).replace(/\s+/g, "");
+  const expiryMonth = normalizeTrimmedString(data?.expiryMonth);
+  const expiryYear = normalizeTrimmedString(data?.expiryYear);
+  const cvv = normalizeTrimmedString(data?.cvv);
+
+  if (!cardHolderName) {
+    throw createError("invalid-argument", "Kart sahibi adi zorunludur.");
+  }
+  if (!/^\d{16}$/.test(cardNumber)) {
+    throw createError("invalid-argument", "Kart numarasi 16 haneli olmalidir.");
+  }
+  if (!/^\d{2}$/.test(expiryMonth)) {
+    throw createError("invalid-argument", "Ay bilgisi MM formatinda olmalidir.");
+  }
+  const parsedMonth = Number.parseInt(expiryMonth, 10);
+  if (parsedMonth < 1 || parsedMonth > 12) {
+    throw createError("invalid-argument", "Ay bilgisi 01-12 arasinda olmalidir.");
+  }
+  if (!/^\d{2,4}$/.test(expiryYear)) {
+    throw createError("invalid-argument", "Yil bilgisi gecersiz.");
+  }
+  const parsedYear = Number.parseInt(expiryYear, 10);
+  const normalizedYear = expiryYear.length === 2 ? 2000 + parsedYear : parsedYear;
+  const currentMonthStart = new Date();
+  currentMonthStart.setUTCDate(1);
+  currentMonthStart.setUTCHours(0, 0, 0, 0);
+  const expiryBoundary = new Date(Date.UTC(normalizedYear, parsedMonth, 1));
+  if (expiryBoundary.getTime() <= currentMonthStart.getTime()) {
+    throw createError("invalid-argument", "Kart son kullanma tarihi gecmis.");
+  }
+  if (!/^\d{3,4}$/.test(cvv)) {
+    throw createError("invalid-argument", "CVV 3 veya 4 haneli olmalidir.");
+  }
+
+  return withClient(
+      {createError, actionLabel: "Sahte odeme isleme"},
+      async (client) => {
+        await expireOverdueReservations(client);
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        assertAllowedRoles(appUser, ["normal_user"], createError);
+
+        const reservation = await loadAccessibleReservationRow(
+            client,
+            appUser,
+            reservationId,
+            createError,
+        );
+        if (!reservation) {
+          throw createError("not-found", "Rezervasyon bulunamadi.");
+        }
+        if (reservation.status === "paid") {
+          throw createError("failed-precondition", "Bu rezervasyon zaten odendi.");
+        }
+        if (reservation.status === "expired") {
+          throw createError(
+              "failed-precondition",
+              "Odeme suresi dolan rezervasyonlar icin odeme yapilamaz.",
+          );
+        }
+        if (reservation.status !== "approved") {
+          throw createError(
+              "failed-precondition",
+              "Odeme yalnizca onaylanmis rezervasyonlar icin yapilabilir.",
+          );
+        }
+
+        await ensurePendingPaymentForReservation(client, reservationId);
+        const payment = await loadAccessiblePaymentRowByReservationId(
+            client,
+            appUser,
+            reservationId,
+            createError,
+        );
+        if (!payment) {
+          throw createError("not-found", "Odeme kaydi bulunamadi.");
+        }
+        if (payment.status === "paid") {
+          throw createError("failed-precondition", "Bu odeme zaten tamamlandi.");
+        }
+
+        const isFailedCard = cardNumber === "4000000000000002";
+        const updatedPayment = await withTransaction(client, async () => {
+          if (isFailedCard) {
+            await client.query(
+                `
+                  UPDATE payments
+                  SET
+                    status = 'failed'::payment_status,
+                    provider = 'fake_gateway',
+                    paid_at = NULL,
+                    updated_at = now()
+                  WHERE id = $1
+                `,
+                [payment.id],
+            );
+          } else {
+            await client.query(
+                `
+                  UPDATE payments
+                  SET
+                    status = 'paid'::payment_status,
+                    provider = 'fake_gateway',
+                    paid_at = now(),
+                    updated_at = now()
+                  WHERE id = $1
+                `,
+                [payment.id],
+            );
+            await client.query(
+                `
+                  UPDATE reservations
+                  SET
+                    status = 'paid'::reservation_status,
+                    paid_at = now(),
+                    updated_at = now()
+                  WHERE id = $1
+                `,
+                [reservationId],
+            );
+          }
+
+          return loadAccessiblePaymentRowByReservationId(
+              client,
+              appUser,
+              reservationId,
+              createError,
+          );
+        });
+
+        return {
+          payment: serializePaymentRow(updatedPayment),
+          succeeded: !isFailedCard,
         };
       },
   );
@@ -1951,3 +2464,6 @@ createCallablePair(
 createCallablePair("createReservation", createReservationCore);
 createCallablePair("cancelReservation", cancelReservationCore);
 createCallablePair("reviewReservation", reviewReservationCore);
+createCallablePair("listPayments", listPaymentsCore);
+createCallablePair("getReservationPayment", getReservationPaymentCore);
+createCallablePair("processFakePayment", processFakePaymentCore);

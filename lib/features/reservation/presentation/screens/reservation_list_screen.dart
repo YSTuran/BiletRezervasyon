@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
+import '../../../payment/presentation/models/payment_route_arguments.dart';
 import '../../data/repositories/reservation_repository.dart';
 import '../../domain/models/reservation.dart';
 import '../helpers/reservation_presentation_helper.dart';
@@ -27,6 +29,22 @@ class ReservationListScreen extends StatelessWidget {
 
 class _ReservationListView extends StatelessWidget {
   const _ReservationListView();
+
+  Future<void> _openPayment(
+    BuildContext context,
+    Reservation reservation,
+  ) async {
+    final result = await Navigator.of(context).pushNamed(
+      AppRoutes.paymentCheckout,
+      arguments: PaymentCheckoutArguments(reservationId: reservation.id),
+    );
+
+    if (!context.mounted || result != true) {
+      return;
+    }
+
+    await context.read<ReservationListViewModel>().load();
+  }
 
   Future<void> _cancelReservation(
     BuildContext context,
@@ -243,7 +261,8 @@ class _ReservationListView extends StatelessWidget {
                       ),
                     ],
                     if (viewModel.canCancel(reservation) ||
-                        viewModel.canReview(reservation)) ...[
+                        viewModel.canReview(reservation) ||
+                        viewModel.canPay(reservation)) ...[
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -262,6 +281,21 @@ class _ReservationListView extends StatelessWidget {
                                 label: const Text('Iptal Et'),
                               ),
                             ),
+                          if (viewModel.canPay(reservation)) ...[
+                            if (viewModel.canCancel(reservation))
+                              const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: viewModel.isBusy
+                                    ? null
+                                    : () {
+                                        _openPayment(context, reservation);
+                                      },
+                                icon: const Icon(Icons.payments_outlined),
+                                label: const Text('Odeme Yap'),
+                              ),
+                            ),
+                          ],
                           if (viewModel.canReview(reservation)) ...[
                             Expanded(
                               child: FilledButton.icon(

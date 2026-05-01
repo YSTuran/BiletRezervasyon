@@ -14,6 +14,8 @@ abstract final class AppRoutes {
   static const tripDetail = '/trips/detail';
   static const tripCreate = '/trips/create';
   static const reservationList = '/reservations';
+  static const paymentList = '/payments';
+  static const paymentCheckout = '/payments/checkout';
 
   static String homeForRole(UserRole role) => switch (role) {
     UserRole.normalUser => homeNormalUser,

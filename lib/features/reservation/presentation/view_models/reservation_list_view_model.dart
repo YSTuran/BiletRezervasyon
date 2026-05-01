@@ -42,6 +42,11 @@ class ReservationListViewModel extends BaseViewModel {
         reservation.status == ReservationStatus.pendingApproval;
   }
 
+  bool canPay(Reservation reservation) {
+    return role == UserRole.normalUser &&
+        reservation.status == ReservationStatus.approved;
+  }
+
   Future<void> load() async {
     if (isBusy) {
       return;

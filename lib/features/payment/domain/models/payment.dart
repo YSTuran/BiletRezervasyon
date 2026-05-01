@@ -11,6 +11,16 @@ class Payment {
     this.provider,
     this.providerPaymentId,
     this.paidAt,
+    this.reservationStatus,
+    this.paymentDeadlineAt,
+    this.seatNumber,
+    this.tripCode,
+    this.tripOrigin,
+    this.tripDestination,
+    this.tripDepartureAt,
+    this.tripArrivalAt,
+    this.tripTransportType,
+    this.companyName,
   }) : assert(amountMinor > 0, 'amountMinor must be greater than 0');
 
   final String id;
@@ -22,6 +32,16 @@ class Payment {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? paidAt;
+  final ReservationStatus? reservationStatus;
+  final DateTime? paymentDeadlineAt;
+  final String? seatNumber;
+  final String? tripCode;
+  final String? tripOrigin;
+  final String? tripDestination;
+  final DateTime? tripDepartureAt;
+  final DateTime? tripArrivalAt;
+  final TransportType? tripTransportType;
+  final String? companyName;
 
   Payment copyWith({
     String? id,
@@ -33,6 +53,16 @@ class Payment {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? paidAt,
+    ReservationStatus? reservationStatus,
+    DateTime? paymentDeadlineAt,
+    String? seatNumber,
+    String? tripCode,
+    String? tripOrigin,
+    String? tripDestination,
+    DateTime? tripDepartureAt,
+    DateTime? tripArrivalAt,
+    TransportType? tripTransportType,
+    String? companyName,
   }) {
     return Payment(
       id: id ?? this.id,
@@ -44,6 +74,16 @@ class Payment {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       paidAt: paidAt ?? this.paidAt,
+      reservationStatus: reservationStatus ?? this.reservationStatus,
+      paymentDeadlineAt: paymentDeadlineAt ?? this.paymentDeadlineAt,
+      seatNumber: seatNumber ?? this.seatNumber,
+      tripCode: tripCode ?? this.tripCode,
+      tripOrigin: tripOrigin ?? this.tripOrigin,
+      tripDestination: tripDestination ?? this.tripDestination,
+      tripDepartureAt: tripDepartureAt ?? this.tripDepartureAt,
+      tripArrivalAt: tripArrivalAt ?? this.tripArrivalAt,
+      tripTransportType: tripTransportType ?? this.tripTransportType,
+      companyName: companyName ?? this.companyName,
     );
   }
 
@@ -58,6 +98,16 @@ class Payment {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'paid_at': paidAt?.toIso8601String(),
+      'reservation_status': reservationStatus?.value,
+      'payment_deadline_at': paymentDeadlineAt?.toIso8601String(),
+      'seat_number': seatNumber,
+      'trip_code': tripCode,
+      'trip_origin': tripOrigin,
+      'trip_destination': tripDestination,
+      'trip_departure_at': tripDepartureAt?.toIso8601String(),
+      'trip_arrival_at': tripArrivalAt?.toIso8601String(),
+      'trip_transport_type': tripTransportType?.value,
+      'company_name': companyName,
     };
   }
 
@@ -74,6 +124,26 @@ class Payment {
       paidAt: json['paid_at'] == null
           ? null
           : DateTime.parse(json['paid_at'] as String),
+      reservationStatus: json['reservation_status'] == null
+          ? null
+          : ReservationStatus.fromValue(json['reservation_status'] as String),
+      paymentDeadlineAt: json['payment_deadline_at'] == null
+          ? null
+          : DateTime.parse(json['payment_deadline_at'] as String),
+      seatNumber: json['seat_number'] as String?,
+      tripCode: json['trip_code'] as String?,
+      tripOrigin: json['trip_origin'] as String?,
+      tripDestination: json['trip_destination'] as String?,
+      tripDepartureAt: json['trip_departure_at'] == null
+          ? null
+          : DateTime.parse(json['trip_departure_at'] as String),
+      tripArrivalAt: json['trip_arrival_at'] == null
+          ? null
+          : DateTime.parse(json['trip_arrival_at'] as String),
+      tripTransportType: json['trip_transport_type'] == null
+          ? null
+          : TransportType.fromValue(json['trip_transport_type'] as String),
+      companyName: json['company_name'] as String?,
     );
   }
 }

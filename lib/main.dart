@@ -15,6 +15,9 @@ import 'features/home/presentation/screens/admin_home_screen.dart';
 import 'features/home/presentation/screens/company_officer_home_screen.dart';
 import 'features/home/presentation/screens/normal_user_home_screen.dart';
 import 'features/payment/data/repositories/payment_repository.dart';
+import 'features/payment/presentation/models/payment_route_arguments.dart';
+import 'features/payment/presentation/screens/payment_checkout_screen.dart';
+import 'features/payment/presentation/screens/payment_list_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/reservation/data/repositories/reservation_repository.dart';
 import 'features/reservation/presentation/models/reservation_route_arguments.dart';
@@ -143,6 +146,24 @@ class MainApp extends StatelessWidget {
               return MaterialPageRoute<void>(
                 settings: settings,
                 builder: (_) => ReservationListScreen(arguments: arguments),
+              );
+            case AppRoutes.paymentList:
+              final arguments = settings.arguments;
+              if (arguments is! PaymentListArguments) {
+                return _buildRouteError(settings, 'Odeme listesi acilamadi.');
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => PaymentListScreen(arguments: arguments),
+              );
+            case AppRoutes.paymentCheckout:
+              final arguments = settings.arguments;
+              if (arguments is! PaymentCheckoutArguments) {
+                return _buildRouteError(settings, 'Odeme ekrani acilamadi.');
+              }
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => PaymentCheckoutScreen(arguments: arguments),
               );
             default:
               return null;
