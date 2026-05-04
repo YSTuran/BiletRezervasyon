@@ -250,6 +250,7 @@ function buildPaymentSelectClause(
     ${prefix}paid_at,
     r.status AS reservation_status,
     r.payment_deadline_at,
+    r.cancelled_at AS reservation_cancelled_at,
     ts.seat_number,
     t.trip_code,
     t.origin AS trip_origin,

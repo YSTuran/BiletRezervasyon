@@ -42,6 +42,84 @@ class _PaymentListView extends StatelessWidget {
     await context.read<PaymentListViewModel>().load();
   }
 
+  Future<bool> _confirmRefund(BuildContext context, Payment payment) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            final refundAmountMinor = payment.refundAmountMinor;
+            final refundSummary = PaymentPresentationHelper.refundSummaryLabel(
+              payment,
+            );
+
+            return AlertDialog(
+              title: const Text('Iade Talebi'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(PaymentPresentationHelper.routeLabel(payment)),
+                  if (refundSummary != null) ...[
+                    const SizedBox(height: 12),
+                    Text('Kural: $refundSummary'),
+                  ],
+                  if (refundAmountMinor != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Iade Tutari: ${PaymentPresentationHelper.formatPrice(refundAmountMinor)}',
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(false);
+                  },
+                  child: const Text('Vazgec'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(true);
+                  },
+                  child: const Text('Iadeyi Tamamla'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  Future<void> _requestRefund(BuildContext context, Payment payment) async {
+    final confirmed = await _confirmRefund(context, payment);
+    if (!context.mounted || !confirmed) {
+      return;
+    }
+
+    try {
+      final result = await context.read<PaymentListViewModel>().requestRefund(
+        payment.reservationId,
+      );
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      final message =
+          'Iade tamamlandi. ${result.refundSummary}: '
+          '${PaymentPresentationHelper.formatPrice(result.refundAmountMinor)}';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } on PaymentActionException catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<PaymentListViewModel>();
@@ -132,8 +210,26 @@ class _PaymentListView extends StatelessWidget {
                       Text(
                         'Odeme Zamani: ${PaymentPresentationHelper.formatDateTime(payment.paidAt!)}',
                       ),
+                    if (payment.reservationCancelledAt != null)
+                      Text(
+                        'Iptal Zamani: ${PaymentPresentationHelper.formatDateTime(payment.reservationCancelledAt!)}',
+                      ),
                     if ((payment.companyName ?? '').trim().isNotEmpty)
                       Text('Firma: ${payment.companyName}'),
+                    if (payment.refundAmountMinor != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Iade Tutari: ${PaymentPresentationHelper.formatPrice(payment.refundAmountMinor!)}',
+                      ),
+                    ],
+                    if (PaymentPresentationHelper.refundSummaryLabel(payment) !=
+                        null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Iade Kurali: ${PaymentPresentationHelper.refundSummaryLabel(payment)!}',
+                        ),
+                      ),
                     if (viewModel.canOpenCheckout(payment)) ...[
                       const SizedBox(height: 16),
                       FilledButton.icon(
@@ -148,6 +244,18 @@ class _PaymentListView extends StatelessWidget {
                               ? 'Tekrar Ode'
                               : 'Odeme Yap',
                         ),
+                      ),
+                    ],
+                    if (viewModel.canRequestRefund(payment)) ...[
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: viewModel.isBusy
+                            ? null
+                            : () {
+                                _requestRefund(context, payment);
+                              },
+                        icon: const Icon(Icons.assignment_return_outlined),
+                        label: const Text('Iade Talep Et'),
                       ),
                     ],
                   ],

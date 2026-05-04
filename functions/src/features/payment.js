@@ -15,6 +15,42 @@ const {
   quoteIdentifier,
   resolveTripTransportTypeColumn,
 } = require("../shared/postgres");
+const {evaluateRefundPolicy} = require("../shared/refund-policy");
+
+function serializePaymentForClient(row, actionAt = new Date()) {
+  if (!row) {
+    return null;
+  }
+
+  const canEvaluateRefund =
+    row.trip_departure_at &&
+    (row.status === "paid" || row.status === "refunded");
+
+  let refundAmountMinor = null;
+  let refundSummary = null;
+  let canRequestRefund = false;
+
+  if (canEvaluateRefund) {
+    const refundPolicy = evaluateRefundPolicy({
+      amountMinor: row.amount_minor,
+      departureAt: row.trip_departure_at,
+      actionAt: row.reservation_cancelled_at || actionAt,
+    });
+    refundAmountMinor = refundPolicy.refundAmountMinor;
+    refundSummary = refundPolicy.refundSummary;
+    canRequestRefund =
+      row.status === "paid" &&
+      row.reservation_status === "paid" &&
+      refundPolicy.isEligible;
+  }
+
+  return serializePaymentRow({
+    ...row,
+    refund_amount_minor: refundAmountMinor,
+    can_request_refund: canRequestRefund,
+    refund_summary: refundSummary,
+  });
+}
 
 async function listPaymentsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
@@ -85,7 +121,7 @@ async function listPaymentsCore({auth, data, createError}) {
         }
 
         return {
-          payments: result.rows.map(serializePaymentRow),
+          payments: result.rows.map((row) => serializePaymentForClient(row)),
         };
       },
   );
@@ -129,7 +165,7 @@ async function getReservationPaymentCore({auth, data, createError}) {
         );
 
         return {
-          payment: serializePaymentRow(payment),
+          payment: serializePaymentForClient(payment),
         };
       },
   );
@@ -277,8 +313,130 @@ async function processFakePaymentCore({auth, data, createError}) {
         });
 
         return {
-          payment: serializePaymentRow(updatedPayment),
+          payment: serializePaymentForClient(updatedPayment),
           succeeded: !isFailedCard,
+        };
+      },
+  );
+}
+
+async function requestRefundCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+  }
+
+  const reservationId = normalizeTrimmedString(data?.reservationId);
+  if (!reservationId) {
+    throw createError("invalid-argument", "reservationId zorunludur.");
+  }
+
+  return withClient(
+      {createError, actionLabel: "Iade islemi"},
+      async (client) => {
+        await expireOverdueReservations(client);
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        assertAllowedRoles(appUser, ["normal_user"], createError);
+
+        const reservation = await loadAccessibleReservationRow(
+            client,
+            appUser,
+            reservationId,
+            createError,
+        );
+        if (!reservation) {
+          throw createError("not-found", "Rezervasyon bulunamadi.");
+        }
+        if (reservation.status !== "paid") {
+          throw createError(
+              "failed-precondition",
+              "Iade yalnizca odenmis rezervasyonlar icin yapilabilir.",
+          );
+        }
+
+        const payment = await loadAccessiblePaymentRowByReservationId(
+            client,
+            appUser,
+            reservationId,
+            createError,
+        );
+        if (!payment) {
+          throw createError("not-found", "Odeme kaydi bulunamadi.");
+        }
+        if (payment.status === "refunded") {
+          throw createError(
+              "failed-precondition",
+              "Bu odeme icin iade zaten tamamlanmis.",
+          );
+        }
+        if (payment.status !== "paid") {
+          throw createError(
+              "failed-precondition",
+              "Iade yalnizca tamamlanmis odemeler icin yapilabilir.",
+          );
+        }
+
+        const actionAt = new Date();
+        const refundPolicy = evaluateRefundPolicy({
+          amountMinor: payment.amount_minor,
+          departureAt: payment.trip_departure_at,
+          actionAt,
+        });
+        if (!refundPolicy.isEligible) {
+          throw createError("failed-precondition", refundPolicy.refundSummary);
+        }
+
+        const updatedPayment = await withTransaction(client, async () => {
+          const paymentUpdateResult = await client.query(
+              `
+                UPDATE payments
+                SET
+                  status = 'refunded'::payment_status,
+                  updated_at = now()
+                WHERE id = $1
+                  AND status = 'paid'::payment_status
+              `,
+              [payment.id],
+          );
+          if (paymentUpdateResult.rowCount === 0) {
+            throw createError(
+                "failed-precondition",
+                "Odeme durumu degistigi icin iade tamamlanamadi.",
+            );
+          }
+
+          const reservationUpdateResult = await client.query(
+              `
+                UPDATE reservations
+                SET
+                  status = 'cancelled_by_user'::reservation_status,
+                  cancelled_at = now(),
+                  updated_at = now()
+                WHERE id = $1
+                  AND user_id = $2
+                  AND status = 'paid'::reservation_status
+              `,
+              [reservationId, appUser.id],
+          );
+          if (reservationUpdateResult.rowCount === 0) {
+            throw createError(
+                "failed-precondition",
+                "Rezervasyon durumu degistigi icin iade tamamlanamadi.",
+            );
+          }
+
+          return loadAccessiblePaymentRowByReservationId(
+              client,
+              appUser,
+              reservationId,
+              createError,
+          );
+        });
+
+        return {
+          payment: serializePaymentForClient(updatedPayment, actionAt),
+          refundAmountMinor: refundPolicy.refundAmountMinor,
+          refundSummary: refundPolicy.refundSummary,
         };
       },
   );
@@ -288,4 +446,5 @@ module.exports = {
   getReservationPaymentCore,
   listPaymentsCore,
   processFakePaymentCore,
+  requestRefundCore,
 };

@@ -64,6 +64,32 @@ class PaymentRepository {
     }
   }
 
+  Future<RefundPaymentResult> requestRefund({
+    required String reservationId,
+  }) async {
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'requestRefund',
+        data: {'reservationId': reservationId},
+      );
+
+      final payment = _parsePayment(response['payment']);
+      if (payment == null) {
+        throw const PaymentActionException('Iade sonucu alinamadi.');
+      }
+
+      return RefundPaymentResult(
+        payment: payment,
+        refundAmountMinor: response['refundAmountMinor'] as int? ?? 0,
+        refundSummary:
+            (response['refundSummary'] as String?)?.trim() ??
+            'Iade islemi tamamlandi.',
+      );
+    } on FirebaseFunctionsException catch (error) {
+      throw PaymentActionException(_mapPaymentError(error.code, error.message));
+    }
+  }
+
   Payment? _parsePayment(dynamic value) {
     if (value is! Map) {
       return null;
@@ -117,6 +143,18 @@ class FakePaymentResult {
 
   final Payment payment;
   final bool succeeded;
+}
+
+class RefundPaymentResult {
+  const RefundPaymentResult({
+    required this.payment,
+    required this.refundAmountMinor,
+    required this.refundSummary,
+  });
+
+  final Payment payment;
+  final int refundAmountMinor;
+  final String refundSummary;
 }
 
 class PaymentActionException implements Exception {

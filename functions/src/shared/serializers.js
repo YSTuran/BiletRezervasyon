@@ -107,6 +107,7 @@ function serializePaymentRow(row) {
     paid_at: serializeDate(row.paid_at),
     reservation_status: row.reservation_status,
     payment_deadline_at: serializeDate(row.payment_deadline_at),
+    reservation_cancelled_at: serializeDate(row.reservation_cancelled_at),
     seat_number: row.seat_number,
     trip_code: row.trip_code,
     trip_origin: row.trip_origin,
@@ -115,6 +116,9 @@ function serializePaymentRow(row) {
     trip_arrival_at: serializeDate(row.trip_arrival_at),
     trip_transport_type: row.trip_transport_type,
     company_name: row.company_name,
+    refund_amount_minor: row.refund_amount_minor ?? null,
+    can_request_refund: row.can_request_refund === true,
+    refund_summary: row.refund_summary ?? null,
   };
 }
 

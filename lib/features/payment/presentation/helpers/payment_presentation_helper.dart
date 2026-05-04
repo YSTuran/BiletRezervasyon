@@ -44,4 +44,12 @@ abstract final class PaymentPresentationHelper {
       TransportType.flight => 'Ucak',
     };
   }
+
+  static String? refundSummaryLabel(Payment payment) {
+    final summary = payment.refundSummary?.trim();
+    if (summary == null || summary.isEmpty) {
+      return null;
+    }
+    return summary;
+  }
 }

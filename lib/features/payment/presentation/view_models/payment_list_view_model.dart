@@ -37,6 +37,10 @@ class PaymentListViewModel extends BaseViewModel {
             payment.status == PaymentStatus.failed);
   }
 
+  bool canRequestRefund(Payment payment) {
+    return role == UserRole.normalUser && payment.canRequestRefund;
+  }
+
   Future<void> load() async {
     if (isBusy) {
       return;
@@ -53,5 +57,40 @@ class PaymentListViewModel extends BaseViewModel {
     } finally {
       setBusy(false);
     }
+  }
+
+  Future<RefundPaymentResult?> requestRefund(String reservationId) async {
+    if (isBusy) {
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      final result = await _repository.requestRefund(
+        reservationId: reservationId,
+      );
+      _replacePayment(result.payment);
+      _errorMessage = null;
+      notifyListeners();
+      return result;
+    } on PaymentActionException {
+      rethrow;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  void _replacePayment(Payment updatedPayment) {
+    final index = _payments.indexWhere(
+      (payment) => payment.id == updatedPayment.id,
+    );
+    if (index == -1) {
+      _payments = [updatedPayment, ..._payments];
+      return;
+    }
+
+    final nextPayments = [..._payments];
+    nextPayments[index] = updatedPayment;
+    _payments = nextPayments;
   }
 }

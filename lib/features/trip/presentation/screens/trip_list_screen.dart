@@ -7,6 +7,7 @@ import '../../data/repositories/trip_repository.dart';
 import '../../domain/models/trip.dart';
 import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
+import '../models/trip_sort_option.dart';
 import '../view_models/trip_list_view_model.dart';
 
 class TripListScreen extends StatelessWidget {
@@ -34,7 +35,17 @@ class _TripListView extends StatefulWidget {
 }
 
 class _TripListViewState extends State<_TripListView> {
+  final _originController = TextEditingController();
+  final _destinationController = TextEditingController();
+
   TripListViewModel get _viewModel => context.read<TripListViewModel>();
+
+  @override
+  void dispose() {
+    _originController.dispose();
+    _destinationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openTripDetails(String tripId) async {
     await Navigator.of(context).pushNamed(
@@ -79,6 +90,36 @@ class _TripListViewState extends State<_TripListView> {
     await _viewModel.load();
   }
 
+  Future<void> _pickDepartureDate() async {
+    final viewModel = _viewModel;
+    final now = DateTime.now();
+    final initialDate = viewModel.departureDateFilter ?? now;
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (!mounted) {
+      return;
+    }
+
+    viewModel.updateDepartureDateFilter(selectedDate);
+  }
+
+  void _clearFilters() {
+    _originController.clear();
+    _destinationController.clear();
+    _viewModel.clearFilters();
+  }
+
+  String _formatDate(DateTime value) {
+    final day = '${value.day}'.padLeft(2, '0');
+    final month = '${value.month}'.padLeft(2, '0');
+    final year = value.year;
+    return '$day.$month.$year';
+  }
+
   Color _statusColor(BuildContext context, Trip trip) {
     final colorScheme = Theme.of(context).colorScheme;
     return switch (trip.status) {
@@ -95,35 +136,118 @@ class _TripListViewState extends State<_TripListView> {
     final trips = viewModel.filteredTrips;
     final companyHintMessage = viewModel.tripCreationHintMessage;
 
-    final filterBar = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: const Text('Tumu'),
-            selected: viewModel.transportFilter == null,
-            onSelected: (_) {
-              viewModel.updateTransportFilter(null);
-            },
+    final filterBar = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Sefer Ara', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _originController,
+                onChanged: viewModel.updateOriginQuery,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Nereden',
+                  prefixIcon: Icon(Icons.flight_takeoff_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _destinationController,
+                onChanged: viewModel.updateDestinationQuery,
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(
+                  labelText: 'Nereye',
+                  prefixIcon: Icon(Icons.flight_land_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<TripSortOption>(
+                key: ValueKey(viewModel.sortOption),
+                initialValue: viewModel.sortOption,
+                decoration: const InputDecoration(
+                  labelText: 'Siralama',
+                  prefixIcon: Icon(Icons.sort_outlined),
+                ),
+                items: TripSortOption.values
+                    .map(
+                      (option) => DropdownMenuItem(
+                        value: option,
+                        child: Text(option.label),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    viewModel.updateSortOption(value);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Tumu'),
+                    selected: viewModel.transportFilter == null,
+                    onSelected: (_) {
+                      viewModel.updateTransportFilter(null);
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('Otobus'),
+                    selected: viewModel.transportFilter == TransportType.bus,
+                    onSelected: (_) {
+                      viewModel.updateTransportFilter(TransportType.bus);
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('Ucak'),
+                    selected: viewModel.transportFilter == TransportType.flight,
+                    onSelected: (_) {
+                      viewModel.updateTransportFilter(TransportType.flight);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _pickDepartureDate,
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: Text(
+                      viewModel.departureDateFilter == null
+                          ? 'Tarih Sec'
+                          : _formatDate(viewModel.departureDateFilter!),
+                    ),
+                  ),
+                  if (viewModel.departureDateFilter != null)
+                    TextButton(
+                      onPressed: () {
+                        viewModel.updateDepartureDateFilter(null);
+                      },
+                      child: const Text('Tarihi Temizle'),
+                    ),
+                  if (viewModel.hasActiveFilters)
+                    TextButton.icon(
+                      onPressed: _clearFilters,
+                      icon: const Icon(Icons.filter_alt_off_outlined),
+                      label: const Text('Filtreleri Temizle'),
+                    ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Otobus'),
-            selected: viewModel.transportFilter == TransportType.bus,
-            onSelected: (_) {
-              viewModel.updateTransportFilter(TransportType.bus);
-            },
-          ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Ucak'),
-            selected: viewModel.transportFilter == TransportType.flight,
-            onSelected: (_) {
-              viewModel.updateTransportFilter(TransportType.flight);
-            },
-          ),
-        ],
+        ),
       ),
     );
 

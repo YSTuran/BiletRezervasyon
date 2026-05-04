@@ -12,6 +12,7 @@ const {
   listReservationsCore,
   listTripsCore,
   processFakePaymentCore,
+  requestRefundCore,
   reviewCompanyCore,
   reviewReservationCore,
   reviewTripCore,
@@ -40,6 +41,7 @@ const callableHandlers = {
   listPayments: listPaymentsCore,
   getReservationPayment: getReservationPaymentCore,
   processFakePayment: processFakePaymentCore,
+  requestRefund: requestRefundCore,
 };
 
 for (const [name, handler] of Object.entries(callableHandlers)) {
