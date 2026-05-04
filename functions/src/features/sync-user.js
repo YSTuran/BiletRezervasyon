@@ -1,5 +1,9 @@
-const {resolveAuthContext, resolveFullName, resolveRole, resolveRoleFromAuthToken} = require("../shared/auth");
+const {resolveAuthContext, resolveFullName, resolveRoleFromAuthToken} = require("../shared/auth");
 const {withClient} = require("../shared/callable");
+const {
+  resolveRequestedSelfServiceRole,
+  resolveUserRoleForSync,
+} = require("../shared/user-role-policy");
 
 async function syncUserCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
@@ -21,26 +25,40 @@ async function syncUserCore({auth, data, createError}) {
 
   const normalizedEmail = email.trim().toLowerCase();
   const fullName = resolveFullName(data?.fullName, normalizedEmail);
-  const requestedRole = data?.role;
-  const roleFromToken = resolveRoleFromAuthToken(resolvedAuth.token);
-  const roleFromRequest = requestedRole ? resolveRole(requestedRole) : null;
-  const role = roleFromRequest || roleFromToken || null;
 
   return withClient(
       {createError, actionLabel: "Kullanici senkronizasyonu"},
       async (client) => {
+        const existingUserResult = await client.query(
+            `
+              SELECT id, role
+              FROM app_users
+              WHERE firebase_uid = $1
+              LIMIT 1
+            `,
+            [firebaseUid],
+        );
+        const existingUser = existingUserResult.rows[0] ?? null;
+        const roleFromToken = resolveRoleFromAuthToken(resolvedAuth.token);
+        const requestedSelfServiceRole = resolveRequestedSelfServiceRole(
+            roleFromToken ? null : data?.role,
+            createError,
+        );
+        const role = resolveUserRoleForSync({
+          existingRole: existingUser?.role,
+          roleFromToken,
+          requestedSelfServiceRole,
+        });
+
         const result = await client.query(
             `
               INSERT INTO app_users (firebase_uid, email, full_name, role)
-              VALUES ($1, $2, $3, COALESCE($4::user_role, 'normal_user'::user_role))
+              VALUES ($1, $2, $3, $4::user_role)
               ON CONFLICT (firebase_uid)
               DO UPDATE SET
                 email = EXCLUDED.email,
                 full_name = EXCLUDED.full_name,
-                role = CASE
-                  WHEN $4::user_role IS NULL THEN app_users.role
-                  ELSE $4::user_role
-                END,
+                role = $4::user_role,
                 updated_at = now()
               RETURNING id, email, full_name, role
             `,

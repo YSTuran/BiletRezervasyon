@@ -16,6 +16,16 @@ class SyncedUser {
   final UserRole role;
 }
 
+class UserSyncException implements Exception {
+  const UserSyncException({required this.code, required this.message});
+
+  final String code;
+  final String message;
+
+  @override
+  String toString() => '$code: $message';
+}
+
 class UserSyncService {
   UserSyncService._();
 
@@ -67,7 +77,6 @@ class UserSyncService {
 
     final tokenRole = await _readRoleFromIdToken(user);
     final requestedRole = preferredRole ?? tokenRole;
-    final localFallbackRole = requestedRole;
 
     Map<String, dynamic> buildPayload({bool includeRole = true}) => {
       'fullName': fullName,
@@ -78,47 +87,24 @@ class UserSyncService {
     };
 
     dynamic responseData;
-    FirebaseFunctionsException? functionError;
-
     try {
       responseData = await _callSyncFunction(buildPayload());
     } on FirebaseFunctionsException catch (error) {
-      functionError = error;
-    }
-
-    // Some backends reject explicit privileged role payloads on login.
-    // Retry without role once and let backend resolve the persisted role.
-    if (functionError != null &&
-        preferredRole == null &&
-        requestedRole != null &&
-        functionError.code == 'permission-denied') {
-      try {
-        responseData = await _callSyncFunction(
-          buildPayload(includeRole: false),
-        );
-        functionError = null;
-      } on FirebaseFunctionsException catch (retryError) {
-        functionError = retryError;
-      }
-    }
-
-    if (functionError != null) {
-      if (localFallbackRole == null) {
-        throw functionError;
-      }
-
-      return SyncedUser(
-        email: user.email ?? '',
-        fullName: fullName,
-        role: localFallbackRole,
+      throw UserSyncException(
+        code: error.code,
+        message: _mapFunctionErrorMessage(error.code, error.message),
       );
     }
 
     final responseMap = _toMap(responseData);
-    final syncedRole = _resolveRole(
-      responseMap['role'] as String?,
-      preferredRole: localFallbackRole,
-    );
+    final rawRole = responseMap['role'] as String?;
+    final parsedRole = _parseRole(rawRole);
+    if (parsedRole == null) {
+      throw const UserSyncException(
+        code: 'data-loss',
+        message: 'Sunucudan gecerli rol bilgisi donmedi.',
+      );
+    }
     final syncedEmail = _nonEmptyOrFallback(
       responseMap['email'] as String?,
       fallback: user.email ?? '',
@@ -131,7 +117,7 @@ class UserSyncService {
     return SyncedUser(
       email: syncedEmail,
       fullName: syncedFullName,
-      role: syncedRole,
+      role: parsedRole,
     );
   }
 
@@ -343,8 +329,27 @@ class UserSyncService {
     return <String, dynamic>{};
   }
 
-  static UserRole _resolveRole(String? rawRole, {UserRole? preferredRole}) {
-    return _parseRole(rawRole) ?? preferredRole ?? UserRole.normalUser;
+  static String _mapFunctionErrorMessage(String code, String? message) {
+    final trimmedMessage = (message ?? '').trim();
+    if (trimmedMessage.isNotEmpty) {
+      return trimmedMessage;
+    }
+
+    switch (code) {
+      case 'permission-denied':
+        return 'Rol atama yetkiniz bulunmuyor.';
+      case 'unauthenticated':
+        return 'Oturum dogrulanamadi.';
+      case 'not-found':
+        return 'Kullanici senkron fonksiyonu bulunamadi.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Sunucuya ulasilamadi.';
+      case 'failed-precondition':
+        return 'Sunucu yapilandirmasi eksik veya hatali.';
+      default:
+        return 'Kullanici senkronizasyonu tamamlanamadi.';
+    }
   }
 
   static Future<UserRole?> _readRoleFromIdToken(User user) async {

@@ -328,42 +328,51 @@ async function cancelReservationCore({auth, data, createError}) {
           );
         }
 
-        await client.query(
-            `
-              UPDATE reservations
-              SET
-                status = 'cancelled_by_user'::reservation_status,
-                cancelled_at = now(),
-                updated_at = now()
-              WHERE id = $1
-                AND user_id = $2
-                AND status = ANY(
-                  ARRAY[
-                    'pending_approval'::reservation_status,
-                    'approved'::reservation_status
-                  ]
-                )
-            `,
-            [reservationId, appUser.id],
-        );
-        await client.query(
-            `
-              UPDATE payments
-              SET
-                status = 'failed'::payment_status,
-                updated_at = now()
-              WHERE reservation_id = $1
-                AND status = 'pending'::payment_status
-            `,
-            [reservationId],
-        );
+        const updatedReservation = await withTransaction(client, async () => {
+          const cancellationResult = await client.query(
+              `
+                UPDATE reservations
+                SET
+                  status = 'cancelled_by_user'::reservation_status,
+                  cancelled_at = now(),
+                  updated_at = now()
+                WHERE id = $1
+                  AND user_id = $2
+                  AND status = ANY(
+                    ARRAY[
+                      'pending_approval'::reservation_status,
+                      'approved'::reservation_status
+                    ]
+                  )
+              `,
+              [reservationId, appUser.id],
+          );
+          if (cancellationResult.rowCount === 0) {
+            throw createError(
+                "failed-precondition",
+                "Rezervasyon durumu degistigi icin iptal edilemedi.",
+            );
+          }
 
-        const updatedReservation = await loadAccessibleReservationRow(
-            client,
-            appUser,
-            reservationId,
-            createError,
-        );
+          await client.query(
+              `
+                UPDATE payments
+                SET
+                  status = 'failed'::payment_status,
+                  updated_at = now()
+                WHERE reservation_id = $1
+                  AND status = 'pending'::payment_status
+              `,
+              [reservationId],
+          );
+
+          return loadAccessibleReservationRow(
+              client,
+              appUser,
+              reservationId,
+              createError,
+          );
+        });
 
         return {
           reservation: serializeReservationRow(updatedReservation),

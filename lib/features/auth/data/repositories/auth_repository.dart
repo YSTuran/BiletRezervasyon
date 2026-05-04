@@ -1,4 +1,3 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/navigation/app_routes.dart';
@@ -37,7 +36,10 @@ class AuthRepository {
         password: password,
       );
 
-      return _syncAfterAuth(preferredFullName: credential.user?.displayName);
+      return _syncAfterAuth(
+        preferredFullName: credential.user?.displayName,
+        deleteCurrentUserOnFailure: false,
+      );
     } on FirebaseAuthException catch (error) {
       throw UserMessageException(_mapLoginError(error.code));
     }
@@ -53,6 +55,7 @@ class AuthRepository {
       final normalizedEmail = email.trim();
       final currentUser = _firebaseAuth.currentUser;
       final currentEmail = currentUser?.email?.toLowerCase();
+      var createdNewFirebaseUser = false;
 
       if (currentUser == null ||
           currentEmail != normalizedEmail.toLowerCase()) {
@@ -60,6 +63,7 @@ class AuthRepository {
           email: normalizedEmail,
           password: password,
         );
+        createdNewFirebaseUser = true;
         final createdUser = credential.user;
         if (createdUser != null &&
             (createdUser.displayName ?? '').trim() != fullName) {
@@ -72,6 +76,7 @@ class AuthRepository {
       return _syncAfterAuth(
         preferredFullName: fullName,
         preferredRole: preferredRole,
+        deleteCurrentUserOnFailure: createdNewFirebaseUser,
       );
     } on FirebaseAuthException catch (error) {
       throw UserMessageException(_mapRegisterError(error.code));
@@ -91,15 +96,17 @@ class AuthRepository {
       return NavigationInstruction(
         route: AppRoutes.homeForRole(syncedUser.role),
       );
-    } on FirebaseFunctionsException catch (error) {
+    } on UserSyncException catch (error) {
+      await _signOutSilently();
       return NavigationInstruction(
-        route: AppRoutes.homeNormalUser,
-        message: _mapHomeResolverSyncWarning(error.code, error.message),
+        route: AppRoutes.login,
+        message: _mapHomeResolverSyncFailure(error.code, error.message),
       );
     } catch (_) {
+      await _signOutSilently();
       return const NavigationInstruction(
-        route: AppRoutes.homeNormalUser,
-        message: 'Kullanici rolu alinamadi, varsayilan ekran aciliyor.',
+        route: AppRoutes.login,
+        message: 'Oturum dogrulanamadi. Lutfen tekrar giris yapin.',
       );
     }
   }
@@ -125,24 +132,31 @@ class AuthRepository {
   Future<NavigationInstruction> _syncAfterAuth({
     String? preferredFullName,
     UserRole? preferredRole,
+    required bool deleteCurrentUserOnFailure,
   }) async {
-    var destinationRoute = AppRoutes.homeResolver;
-    String? warningMessage;
-
     try {
       final syncedUser = await UserSyncService.syncSignedInUser(
         preferredFullName: preferredFullName,
         preferredRole: preferredRole,
       );
-      destinationRoute = AppRoutes.homeForRole(syncedUser.role);
-    } on FirebaseFunctionsException catch (error) {
-      warningMessage = _mapAuthSyncWarning(error.code, error.message);
+      return NavigationInstruction(
+        route: AppRoutes.homeForRole(syncedUser.role),
+      );
+    } on UserSyncException catch (error) {
+      await _rollbackAfterSyncFailure(
+        deleteCurrentUser: deleteCurrentUserOnFailure,
+      );
+      throw UserMessageException(
+        _mapAuthSyncFailure(error.code, error.message),
+      );
+    } catch (_) {
+      await _rollbackAfterSyncFailure(
+        deleteCurrentUser: deleteCurrentUserOnFailure,
+      );
+      throw const UserMessageException(
+        'Hesap senkronizasyonu tamamlanamadi. Lutfen tekrar deneyin.',
+      );
     }
-
-    return NavigationInstruction(
-      route: destinationRoute,
-      message: warningMessage,
-    );
   }
 
   String _mapLoginError(String code) {
@@ -182,63 +196,101 @@ class AuthRepository {
     }
   }
 
-  String _mapAuthSyncWarning(String code, String? message) {
-    final trimmedMessage = (message ?? '').trim();
+  Future<void> _rollbackAfterSyncFailure({
+    required bool deleteCurrentUser,
+  }) async {
+    final currentUser = _firebaseAuth.currentUser;
+    if (currentUser != null && deleteCurrentUser) {
+      try {
+        await currentUser.delete();
+      } on FirebaseAuthException {
+        await _signOutSilently();
+        return;
+      }
+    }
 
-    switch (code) {
-      case 'not-found':
-        return 'Hesap acildi ancak PostgreSQL senkron fonksiyonu bulunamadi.';
-      case 'unavailable':
-      case 'deadline-exceeded':
-        return 'Hesap acildi ancak PostgreSQL baglantisi su an kullanilamiyor.';
-      case 'permission-denied':
-      case 'unauthenticated':
-        return 'Hesap acildi ancak PostgreSQL yetkilendirmesi basarisiz oldu.';
-      case 'failed-precondition':
-        if (trimmedMessage.isNotEmpty) {
-          return trimmedMessage;
-        }
-        return 'Hesap acildi ancak sunucu yapilandirmasi eksik.';
-      case 'internal':
-        if (trimmedMessage.isNotEmpty) {
-          return trimmedMessage;
-        }
-        return 'Hesap acildi ancak PostgreSQL baglantisi basarisiz oldu.';
-      default:
-        if (trimmedMessage.isNotEmpty) {
-          return trimmedMessage;
-        }
-        return 'Hesap acildi ancak PostgreSQL senkronizasyonu tamamlanamadi.';
+    await _signOutSilently();
+  }
+
+  Future<void> _signOutSilently() async {
+    if (_firebaseAuth.currentUser == null) {
+      return;
+    }
+
+    try {
+      await _firebaseAuth.signOut();
+    } on FirebaseAuthException {
+      // Ignore best-effort cleanup failures.
     }
   }
 
-  String _mapHomeResolverSyncWarning(String code, String? message) {
+  String _mapAuthSyncFailure(String code, String? message) {
     final trimmedMessage = (message ?? '').trim();
 
     switch (code) {
       case 'not-found':
-        return 'PostgreSQL senkron fonksiyonu bulunamadi, varsayilan ekran aciliyor.';
+        return 'Sunucu senkron fonksiyonu bulunamadi. Lutfen daha sonra tekrar deneyin.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi, varsayilan ekran aciliyor.';
+        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
       case 'permission-denied':
       case 'unauthenticated':
-        return 'Yetki dogrulanamadi, varsayilan ekran aciliyor.';
+        return 'Rol dogrulamasi basarisiz oldu.';
       case 'failed-precondition':
         if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
+          return trimmedMessage;
         }
-        return 'Sunucu yapilandirmasi eksik, varsayilan ekran aciliyor.';
+        return 'Sunucu yapilandirmasi eksik veya hatali.';
+      case 'data-loss':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sunucudan gecerli rol bilgisi alinamadi.';
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
+          return trimmedMessage;
         }
-        return 'PostgreSQL baglantisi basarisiz, varsayilan ekran aciliyor.';
+        return 'Kullanici kaydi sunucuya yazilamadi.';
       default:
         if (trimmedMessage.isNotEmpty) {
-          return '$trimmedMessage (kod: $code)';
+          return trimmedMessage;
         }
-        return 'Rol bilgisi alinamadi, varsayilan ekran aciliyor.';
+        return 'Hesap senkronizasyonu tamamlanamadi.';
+    }
+  }
+
+  String _mapHomeResolverSyncFailure(String code, String? message) {
+    final trimmedMessage = (message ?? '').trim();
+
+    switch (code) {
+      case 'not-found':
+        return 'Sunucu senkron fonksiyonu bulunamadi. Lutfen tekrar giris yapin.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar giris yapin.';
+      case 'permission-denied':
+      case 'unauthenticated':
+        return 'Yetki dogrulanamadi. Lutfen tekrar giris yapin.';
+      case 'failed-precondition':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sunucu yapilandirmasi eksik veya hatali.';
+      case 'data-loss':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sunucudan gecerli rol bilgisi alinamadi.';
+      case 'internal':
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Sunucuya baglanirken hata olustu.';
+      default:
+        if (trimmedMessage.isNotEmpty) {
+          return trimmedMessage;
+        }
+        return 'Rol bilgisi alinamadi. Lutfen tekrar giris yapin.';
     }
   }
 }

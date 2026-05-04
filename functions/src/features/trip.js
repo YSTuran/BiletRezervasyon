@@ -21,6 +21,87 @@ const {
   quoteIdentifier,
   resolveTripTransportTypeColumn,
 } = require("../shared/postgres");
+const {createTripCode, isTripCodeConflict} = require("./trip-code");
+
+async function insertTripWithUniqueCode({
+  client,
+  appUser,
+  arrivalAt,
+  company,
+  createError,
+  departureAt,
+  destination,
+  origin,
+  priceMinor,
+  seatCapacity,
+  tripTransportTypeColumn,
+}) {
+  const maxAttempts = 5;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const tripId = randomUUID();
+    const tripCode = createTripCode({
+      transportType: company.transport_type,
+      departureAt,
+    });
+
+    try {
+      const insertTripResult = await client.query(
+          `
+            INSERT INTO trips (
+              id,
+              company_id,
+              created_by_officer_id,
+              ${quoteIdentifier(tripTransportTypeColumn)},
+              trip_code,
+              origin,
+              destination,
+              departure_at,
+              arrival_at,
+              seat_capacity,
+              price_minor,
+              status,
+              created_at,
+              updated_at
+            )
+            VALUES (
+              $1, $2, $3, $4, $5, $6, $7,
+              $8, $9, $10, $11, 'pending_approval', now(), now()
+            )
+            RETURNING ${buildTripSelectClause(quoteIdentifier(tripTransportTypeColumn))}
+          `,
+          [
+            tripId,
+            company.id,
+            appUser.id,
+            company.transport_type,
+            tripCode,
+            origin,
+            destination,
+            departureAt.toISOString(),
+            arrivalAt.toISOString(),
+            seatCapacity,
+            priceMinor,
+          ],
+      );
+
+      return {
+        tripId,
+        tripRow: insertTripResult.rows[0],
+      };
+    } catch (error) {
+      if (attempt < maxAttempts - 1 && isTripCodeConflict(error)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw createError(
+      "aborted",
+      "Sefer kodu olusturulurken beklenmeyen bir cakisma olustu.",
+  );
+}
 
 async function listTripsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
@@ -201,54 +282,19 @@ async function createTripCore({auth, data, createError}) {
         }
 
         return withTransaction(client, async () => {
-          const countResult = await client.query(
-              "SELECT COUNT(*)::int AS total FROM trips",
-          );
-          const serial = String(countResult.rows[0].total + 1).padStart(2, "0");
-          const prefix = company.transport_type === "bus" ? "BUS" : "FLT";
-          const month = String(departureAt.getUTCMonth() + 1).padStart(2, "0");
-          const day = String(departureAt.getUTCDate()).padStart(2, "0");
-          const tripCode = `${prefix}-${month}${day}-${serial}`;
-          const tripId = randomUUID();
-
-          const insertTripResult = await client.query(
-              `
-                INSERT INTO trips (
-                  id,
-                  company_id,
-                  created_by_officer_id,
-                  ${quoteIdentifier(tripTransportTypeColumn)},
-                  trip_code,
-                  origin,
-                  destination,
-                  departure_at,
-                  arrival_at,
-                  seat_capacity,
-                  price_minor,
-                  status,
-                  created_at,
-                  updated_at
-                )
-                VALUES (
-                  $1, $2, $3, $4, $5, $6, $7,
-                  $8, $9, $10, $11, 'pending_approval', now(), now()
-                )
-                RETURNING ${buildTripSelectClause(quoteIdentifier(tripTransportTypeColumn))}
-              `,
-              [
-                tripId,
-                company.id,
-                appUser.id,
-                company.transport_type,
-                tripCode,
-                origin,
-                destination,
-                departureAt.toISOString(),
-                arrivalAt.toISOString(),
-                seatCapacity,
-                priceMinor,
-              ],
-          );
+          const {tripId, tripRow} = await insertTripWithUniqueCode({
+            client,
+            appUser,
+            arrivalAt,
+            company,
+            createError,
+            departureAt,
+            destination,
+            origin,
+            priceMinor,
+            seatCapacity,
+            tripTransportTypeColumn,
+          });
 
           const seatValues = [];
           const seatPlaceholders = [];
@@ -282,7 +328,7 @@ async function createTripCore({auth, data, createError}) {
             );
 
           return {
-            trip: serializeTripRow(insertTripResult.rows[0]),
+            trip: serializeTripRow(tripRow),
             seats: insertSeatsResult.rows.map(serializeTripSeatRow),
           };
         });
