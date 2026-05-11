@@ -61,7 +61,7 @@ class TripListViewModel extends BaseViewModel {
   bool get hasActiveFilters => _filter.hasActiveFilters;
 
   String get title => switch (role) {
-    UserRole.normalUser => 'Tum Seferler',
+    UserRole.normalUser => 'Aktif Seferler',
     UserRole.companyOfficer => 'Sirketime Ait Seferler',
     UserRole.admin => 'Tum Seferler',
   };
@@ -72,7 +72,8 @@ class TripListViewModel extends BaseViewModel {
     }
 
     return switch (role) {
-      UserRole.normalUser => 'Gosterilecek sefer bulunmuyor.',
+      UserRole.normalUser =>
+        'Yaklasan veya yolda olan gosterilecek sefer bulunmuyor.',
       UserRole.companyOfficer => 'Sirketinize ait kayitli sefer bulunmuyor.',
       UserRole.admin => 'Sistemde kayitli sefer bulunmuyor.',
     };

@@ -16,11 +16,11 @@ class HomeViewModel {
 
   String get description => switch (role) {
     UserRole.normalUser =>
-      'Onaylanmis tum seferleri inceleyebilir ve tur bazinda filtreleyebilirsiniz.',
+      'Yaklasan ve yolda olan onayli seferleri inceleyebilir, filtreleyebilir ve rezervasyon olusturabilirsiniz.',
     UserRole.companyOfficer =>
-      'Firma bilgilerinizi girip admin onayi sonrasi yalnizca kendi seferlerinizi yonetebilirsiniz.',
+      'Firma bilgilerinizi guncelleyip operasyon panelinden doluluk, yolcu ve sefer akislarini takip edebilirsiniz.',
     UserRole.admin =>
-      'Firmalari ve seferleri inceleyip onay surecini yonetebilirsiniz.',
+      'Dashboard uzerinden bekleyen kayitlari, satis ozetlerini ve red nedenlerini yonetebilirsiniz.',
   };
 
   String get tripButtonLabel => switch (role) {

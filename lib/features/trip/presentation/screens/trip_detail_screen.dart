@@ -65,45 +65,18 @@ class _TripDetailViewState extends State<_TripDetailView> {
   }
 
   Future<void> _rejectTrip(BuildContext context) async {
-    final reasonController = TextEditingController();
+    final viewModel = context.read<TripDetailViewModel>();
     final reason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Seferi Reddet'),
-          content: TextField(
-            controller: reasonController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Red nedeni',
-              hintText: 'Kisa bir aciklama yazin',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Vazgec'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(reasonController.text.trim());
-              },
-              child: const Text('Reddet'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => const _TripRejectDialog(),
     );
-    reasonController.dispose();
 
     if (!context.mounted || reason == null) {
       return;
     }
 
     try {
-      final trip = await context.read<TripDetailViewModel>().rejectTrip(reason);
+      final trip = await viewModel.rejectTrip(reason);
       if (!context.mounted || trip == null) {
         return;
       }
@@ -460,6 +433,52 @@ class _TripDetailViewState extends State<_TripDetailView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TripRejectDialog extends StatefulWidget {
+  const _TripRejectDialog();
+
+  @override
+  State<_TripRejectDialog> createState() => _TripRejectDialogState();
+}
+
+class _TripRejectDialogState extends State<_TripRejectDialog> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Seferi Reddet'),
+      content: TextField(
+        controller: _reasonController,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          labelText: 'Red nedeni',
+          hintText: 'Kisa bir aciklama yazin',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Vazgec'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(_reasonController.text.trim());
+          },
+          child: const Text('Reddet'),
+        ),
+      ],
     );
   }
 }

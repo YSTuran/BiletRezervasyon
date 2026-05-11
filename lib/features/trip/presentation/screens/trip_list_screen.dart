@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../data/repositories/trip_repository.dart';
-import '../../domain/models/trip.dart';
 import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../models/trip_sort_option.dart';
@@ -118,16 +117,6 @@ class _TripListViewState extends State<_TripListView> {
     final month = '${value.month}'.padLeft(2, '0');
     final year = value.year;
     return '$day.$month.$year';
-  }
-
-  Color _statusColor(BuildContext context, Trip trip) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return switch (trip.status) {
-      TripStatus.approved => colorScheme.primaryContainer,
-      TripStatus.pendingApproval => colorScheme.secondaryContainer,
-      TripStatus.rejected => colorScheme.errorContainer,
-      TripStatus.cancelled => colorScheme.surfaceContainerHighest,
-    };
   }
 
   @override
@@ -287,12 +276,21 @@ class _TripListViewState extends State<_TripListView> {
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final trip = trips[index];
+            final visualStyle = TripPresentationHelper.visualStyle(trip);
             return Card(
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                title: Text('${trip.origin} -> ${trip.destination}'),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 8),
+              color: visualStyle.backgroundColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: visualStyle.borderColor, width: 1.5),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  _openTripDetails(trip.id);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -300,42 +298,89 @@ class _TripListViewState extends State<_TripListView> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          Chip(
-                            label: Text(
-                              TripPresentationHelper.statusLabel(trip.status),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
                             ),
-                            backgroundColor: _statusColor(context, trip),
+                            decoration: BoxDecoration(
+                              color: visualStyle.borderColor,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              visualStyle.label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                          Chip(
-                            label: Text(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
                               TripPresentationHelper.transportLabel(
                                 trip.transportType,
+                              ),
+                              style: TextStyle(
+                                color: visualStyle.foregroundColor,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 14),
+                      Text(
+                        '${trip.origin} -> ${trip.destination}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: visualStyle.foregroundColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Kod: ${trip.tripCode}'),
+                      Text(
+                        'Kod: ${trip.tripCode}',
+                        style: TextStyle(color: visualStyle.foregroundColor),
+                      ),
                       Text(
                         'Kalkis: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
+                        style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
                         'Varis: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
+                        style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
                         'Sure: ${TripPresentationHelper.formatDuration(trip)}',
+                        style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
                         'Fiyat: ${TripPresentationHelper.formatPrice(trip.priceMinor)}',
+                        style: TextStyle(
+                          color: visualStyle.foregroundColor,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                      if ((trip.rejectionReason ?? '').trim().isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          'Not: ${trip.rejectionReason}',
+                          style: TextStyle(
+                            color: visualStyle.foregroundColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _openTripDetails(trip.id);
-                },
               ),
             );
           },

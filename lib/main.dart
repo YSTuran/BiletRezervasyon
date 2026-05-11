@@ -11,6 +11,7 @@ import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/company/data/repositories/company_repository.dart';
 import 'features/company/presentation/screens/company_form_screen.dart';
 import 'features/company/presentation/screens/company_management_screen.dart';
+import 'features/dashboard/data/repositories/dashboard_repository.dart';
 import 'features/home/presentation/screens/admin_home_screen.dart';
 import 'features/home/presentation/screens/company_officer_home_screen.dart';
 import 'features/home/presentation/screens/normal_user_home_screen.dart';
@@ -77,6 +78,7 @@ class MainApp extends StatelessWidget {
       providers: [
         Provider<AuthRepository>(create: (_) => AuthRepository()),
         Provider<CompanyRepository>(create: (_) => CompanyRepository()),
+        Provider<DashboardRepository>(create: (_) => DashboardRepository()),
         Provider<TripRepository>(
           create: (context) => TripRepository(
             companyRepository: context.read<CompanyRepository>(),

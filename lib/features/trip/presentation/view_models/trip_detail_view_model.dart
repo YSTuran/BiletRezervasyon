@@ -91,11 +91,9 @@ class TripDetailViewModel extends BaseViewModel {
 
       _trip = updatedTrip;
       _errorMessage = null;
-      notifyListeners();
       return updatedTrip;
     } catch (_) {
       _errorMessage = 'Sefer onaylanamadi.';
-      notifyListeners();
       rethrow;
     } finally {
       setBusy(false);
@@ -126,11 +124,9 @@ class TripDetailViewModel extends BaseViewModel {
 
       _trip = updatedTrip;
       _errorMessage = null;
-      notifyListeners();
       return updatedTrip;
     } catch (_) {
       _errorMessage = 'Sefer reddedilemedi.';
-      notifyListeners();
       rethrow;
     } finally {
       setBusy(false);

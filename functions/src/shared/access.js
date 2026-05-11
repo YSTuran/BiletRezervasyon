@@ -100,6 +100,7 @@ async function loadAccessibleTripRow(client, appUser, tripId, createError) {
         FROM trips
         WHERE id = $1
           AND status = 'approved'
+          AND arrival_at > now()
         LIMIT 1
       `,
       [tripId],

@@ -144,6 +144,7 @@ async function listTripsCore({auth, data, createError}) {
                 SELECT ${buildTripSelectClause(quoteIdentifier(transportTypeColumn))}
                 FROM trips
                 WHERE status = 'approved'
+                  AND arrival_at > now()
                 ORDER BY departure_at ASC
               `,
           );

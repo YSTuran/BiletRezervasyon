@@ -3,6 +3,8 @@ const {createCallablePair} = require("./src/shared/callable");
 const {
   createReservationCore,
   createTripCore,
+  getAdminDashboardCore,
+  getCompanyOperationsDashboardCore,
   getMyCompanyCore,
   getReservationPaymentCore,
   getTripDetailCore,
@@ -25,6 +27,8 @@ initializeFirebaseRuntime();
 
 const callableHandlers = {
   syncUserToPostgres: syncUserCore,
+  getCompanyOperationsDashboard: getCompanyOperationsDashboardCore,
+  getAdminDashboard: getAdminDashboardCore,
   getMyCompany: getMyCompanyCore,
   upsertCompanyProfile: upsertCompanyProfileCore,
   listCompanies: listCompaniesCore,
