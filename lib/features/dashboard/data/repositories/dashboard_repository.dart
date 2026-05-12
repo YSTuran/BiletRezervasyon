@@ -15,6 +15,10 @@ class DashboardRepository {
       throw DashboardActionException(
         _mapDashboardError(error.code, error.message),
       );
+    } catch (_) {
+      throw const DashboardActionException(
+        'Panel verileri beklenen formatta alinamadi.',
+      );
     }
   }
 
@@ -27,6 +31,10 @@ class DashboardRepository {
     } on FirebaseFunctionsException catch (error) {
       throw DashboardActionException(
         _mapDashboardError(error.code, error.message),
+      );
+    } catch (_) {
+      throw const DashboardActionException(
+        'Panel verileri beklenen formatta alinamadi.',
       );
     }
   }

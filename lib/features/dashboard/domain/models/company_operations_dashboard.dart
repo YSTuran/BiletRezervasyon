@@ -20,9 +20,7 @@ class CompanyOperationsDashboard {
       company: companyJson is Map<String, dynamic>
           ? Company.fromJson(companyJson)
           : null,
-      stats: CompanyOperationsStats.fromJson(
-        json['stats'] as Map<String, dynamic>? ?? const {},
-      ),
+      stats: CompanyOperationsStats.fromJson(_readMap(json['stats'])),
       upcomingTrips: (json['upcoming_trips'] as List<dynamic>? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(CompanyOperationsTripSnapshot.fromJson)
@@ -53,12 +51,13 @@ class CompanyOperationsStats {
 
   factory CompanyOperationsStats.fromJson(Map<String, dynamic> json) {
     return CompanyOperationsStats(
-      overallOccupancyRatePercent:
-          json['overall_occupancy_rate_percent'] as int? ?? 0,
-      upcomingTripCount: json['upcoming_trip_count'] as int? ?? 0,
-      activeTripCount: json['active_trip_count'] as int? ?? 0,
-      passengerCount: json['passenger_count'] as int? ?? 0,
-      pendingReservationCount: json['pending_reservation_count'] as int? ?? 0,
+      overallOccupancyRatePercent: _readInt(
+        json['overall_occupancy_rate_percent'],
+      ),
+      upcomingTripCount: _readInt(json['upcoming_trip_count']),
+      activeTripCount: _readInt(json['active_trip_count']),
+      passengerCount: _readInt(json['passenger_count']),
+      pendingReservationCount: _readInt(json['pending_reservation_count']),
     );
   }
 }
@@ -94,18 +93,18 @@ class CompanyOperationsTripSnapshot {
 
   factory CompanyOperationsTripSnapshot.fromJson(Map<String, dynamic> json) {
     return CompanyOperationsTripSnapshot(
-      tripId: json['trip_id'] as String,
-      tripCode: json['trip_code'] as String,
-      origin: json['origin'] as String,
-      destination: json['destination'] as String,
-      departureAt: DateTime.parse(json['departure_at'] as String),
-      arrivalAt: DateTime.parse(json['arrival_at'] as String),
-      seatCapacity: json['seat_capacity'] as int? ?? 0,
-      status: TripStatus.fromValue(json['status'] as String),
-      transportType: TransportType.fromValue(json['transport_type'] as String),
-      occupiedSeatCount: json['occupied_seat_count'] as int? ?? 0,
-      paidPassengerCount: json['paid_passenger_count'] as int? ?? 0,
-      occupancyRatePercent: json['occupancy_rate_percent'] as int? ?? 0,
+      tripId: _readString(json['trip_id']),
+      tripCode: _readString(json['trip_code'], fallback: '-'),
+      origin: _readString(json['origin'], fallback: '-'),
+      destination: _readString(json['destination'], fallback: '-'),
+      departureAt: _readDate(json['departure_at']),
+      arrivalAt: _readDate(json['arrival_at']),
+      seatCapacity: _readInt(json['seat_capacity']),
+      status: _readTripStatus(json['status']),
+      transportType: _readTransportType(json['transport_type']),
+      occupiedSeatCount: _readInt(json['occupied_seat_count']),
+      paidPassengerCount: _readInt(json['paid_passenger_count']),
+      occupancyRatePercent: _readInt(json['occupancy_rate_percent']),
     );
   }
 }
@@ -137,18 +136,76 @@ class PassengerManifestEntry {
 
   factory PassengerManifestEntry.fromJson(Map<String, dynamic> json) {
     return PassengerManifestEntry(
-      reservationId: json['reservation_id'] as String,
-      tripId: json['trip_id'] as String,
-      tripCode: json['trip_code'] as String,
-      origin: json['origin'] as String,
-      destination: json['destination'] as String,
-      departureAt: DateTime.parse(json['departure_at'] as String),
-      seatNumber: json['seat_number'] as String,
-      passengerName: json['passenger_name'] as String,
-      passengerEmail: json['passenger_email'] as String,
-      reservationStatus: ReservationStatus.fromValue(
-        json['reservation_status'] as String,
-      ),
+      reservationId: _readString(json['reservation_id']),
+      tripId: _readString(json['trip_id']),
+      tripCode: _readString(json['trip_code'], fallback: '-'),
+      origin: _readString(json['origin'], fallback: '-'),
+      destination: _readString(json['destination'], fallback: '-'),
+      departureAt: _readDate(json['departure_at']),
+      seatNumber: _readString(json['seat_number'], fallback: '-'),
+      passengerName: _readString(json['passenger_name'], fallback: '-'),
+      passengerEmail: _readString(json['passenger_email'], fallback: '-'),
+      reservationStatus: _readReservationStatus(json['reservation_status']),
     );
+  }
+}
+
+Map<String, dynamic> _readMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((key, data) => MapEntry('$key', data));
+  }
+  return const {};
+}
+
+String _readString(dynamic value, {String fallback = ''}) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? fallback : text;
+}
+
+int _readInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  if (value is String) {
+    return int.tryParse(value) ?? 0;
+  }
+  return 0;
+}
+
+DateTime _readDate(dynamic value) {
+  if (value is DateTime) {
+    return value;
+  }
+  final text = value?.toString().trim() ?? '';
+  return DateTime.tryParse(text) ?? DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+TripStatus _readTripStatus(dynamic value) {
+  try {
+    return TripStatus.fromValue(_readString(value));
+  } catch (_) {
+    return TripStatus.approved;
+  }
+}
+
+TransportType _readTransportType(dynamic value) {
+  try {
+    return TransportType.fromValue(_readString(value));
+  } catch (_) {
+    return TransportType.bus;
+  }
+}
+
+ReservationStatus _readReservationStatus(dynamic value) {
+  try {
+    return ReservationStatus.fromValue(_readString(value));
+  } catch (_) {
+    return ReservationStatus.approved;
   }
 }

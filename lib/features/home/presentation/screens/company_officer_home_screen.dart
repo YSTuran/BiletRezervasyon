@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../company/data/repositories/company_repository.dart';
 import '../../../company/domain/models/company.dart';
 import '../../../company/presentation/helpers/company_presentation_helper.dart';
 import '../../../dashboard/data/repositories/dashboard_repository.dart';
@@ -32,7 +33,8 @@ class CompanyOfficerHomeScreen extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => CompanyOperationsDashboardViewModel(
-            repository: context.read<DashboardRepository>(),
+            dashboardRepository: context.read<DashboardRepository>(),
+            companyRepository: context.read<CompanyRepository>(),
           )..load(),
         ),
       ],
@@ -92,9 +94,8 @@ class _CompanyOperationsHomeViewState
   Widget _buildHeroCard(
     BuildContext context,
     HomeViewModel homeViewModel,
-    CompanyOperationsDashboard? dashboard,
+    Company? company,
   ) {
-    final company = dashboard?.company;
     final title = company?.name ?? 'Firma bilgileri eksik';
     final subtitle = company == null
         ? 'Sefer olusturabilmek icin firma adinizi ve ulasim turunu girmeniz gerekiyor.'
@@ -459,7 +460,7 @@ class _CompanyOperationsHomeViewState
     final homeViewModel = context.read<HomeViewModel>();
     final viewModel = context.watch<CompanyOperationsDashboardViewModel>();
     final dashboard = viewModel.dashboard;
-    final company = dashboard?.company;
+    final company = viewModel.company;
 
     if (viewModel.isBusy && dashboard == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -473,7 +474,7 @@ class _CompanyOperationsHomeViewState
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            _buildHeroCard(context, homeViewModel, dashboard),
+            _buildHeroCard(context, homeViewModel, company),
             if (viewModel.errorMessage != null && dashboard == null) ...[
               const SizedBox(height: 16),
               DashboardSectionCard(
