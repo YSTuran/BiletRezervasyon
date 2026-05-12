@@ -21,12 +21,14 @@ const {
   syncUserCore,
   upsertCompanyProfileCore,
   cancelReservationCore,
+  deleteMyAccountCore,
 } = require("./src/features");
 
 initializeFirebaseRuntime();
 
 const callableHandlers = {
   syncUserToPostgres: syncUserCore,
+  deleteMyAccount: deleteMyAccountCore,
   getCompanyOperationsDashboard: getCompanyOperationsDashboardCore,
   getAdminDashboard: getAdminDashboardCore,
   getMyCompany: getMyCompanyCore,

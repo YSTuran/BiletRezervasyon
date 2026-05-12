@@ -251,7 +251,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
     );
   }
 
-  Widget _buildSeatChip(
+  Widget _buildSeatButton(
     BuildContext context,
     TripDetailViewModel viewModel,
     TripSeat seat,
@@ -261,19 +261,43 @@ class _TripDetailViewState extends State<_TripDetailView> {
         !viewModel.isSeatBlocked(seat.id) &&
         viewModel.currentUserReservation == null;
 
-    return ChoiceChip(
-      label: Text(seat.seatNumber),
-      selected:
-          _selectedSeatId == seat.id || _isOwnReservationSeat(viewModel, seat),
-      onSelected: canPick
-          ? (selected) {
+    final selected =
+        _selectedSeatId == seat.id || _isOwnReservationSeat(viewModel, seat);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: canPick
+          ? () {
               setState(() {
-                _selectedSeatId = selected ? seat.id : null;
+                _selectedSeatId = selected ? null : seat.id;
               });
             }
           : null,
-      backgroundColor: _seatColor(context, viewModel, seat),
-      selectedColor: Theme.of(context).colorScheme.primaryContainer,
+      child: Container(
+        height: 42,
+        width: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primaryContainer
+              : _seatColor(context, viewModel, seat),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          seat.seatNumber,
+          style: TextStyle(
+            color: selected
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurface,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
     );
   }
 
@@ -417,14 +441,12 @@ class _TripDetailViewState extends State<_TripDetailView> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: viewModel.seats
-                          .map(
-                            (seat) => _buildSeatChip(context, viewModel, seat),
-                          )
-                          .toList(),
+                    _SeatLayoutView(
+                      transportType: trip.transportType,
+                      seats: viewModel.seats,
+                      seatBuilder: (seat) {
+                        return _buildSeatButton(context, viewModel, seat);
+                      },
                     ),
                   ],
                 ),
@@ -433,6 +455,152 @@ class _TripDetailViewState extends State<_TripDetailView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+typedef _SeatBuilder = Widget Function(TripSeat seat);
+
+class _SeatLayoutView extends StatelessWidget {
+  const _SeatLayoutView({
+    required this.transportType,
+    required this.seats,
+    required this.seatBuilder,
+  });
+
+  final TransportType transportType;
+  final List<TripSeat> seats;
+  final _SeatBuilder seatBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (seats.isEmpty) {
+      return const Text('Koltuk bilgisi bulunmuyor.');
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  transportType == TransportType.bus
+                      ? Icons.directions_bus_outlined
+                      : Icons.flight_outlined,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  transportType == TransportType.bus
+                      ? '2+1 koltuk duzeni, son sira dortlu'
+                      : '3+3 kabin duzeni',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if (transportType == TransportType.bus)
+              _buildBusLayout()
+            else
+              _buildFlightLayout(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBusLayout() {
+    final rows = <Widget>[];
+    final lastRowStart = seats.length > 4 ? seats.length - 4 : seats.length;
+    final regularSeats = seats.take(lastRowStart).toList();
+    final lastRowSeats = seats.skip(lastRowStart).toList();
+
+    for (var index = 0; index < regularSeats.length; index += 3) {
+      final rowSeats = regularSeats.skip(index).take(3).toList();
+      rows.add(
+        _buildSplitRow(
+          leftSeats: rowSeats.take(2).toList(),
+          rightSeats: rowSeats.skip(2).take(1).toList(),
+        ),
+      );
+    }
+
+    if (lastRowSeats.isNotEmpty) {
+      rows.add(_buildFullRow(lastRowSeats));
+    }
+
+    return _buildRows(rows);
+  }
+
+  Widget _buildFlightLayout() {
+    final rows = <Widget>[];
+    for (var index = 0; index < seats.length; index += 6) {
+      final rowSeats = seats.skip(index).take(6).toList();
+      rows.add(
+        _buildSplitRow(
+          leftSeats: rowSeats.take(3).toList(),
+          rightSeats: rowSeats.skip(3).take(3).toList(),
+        ),
+      );
+    }
+    return _buildRows(rows);
+  }
+
+  Widget _buildRows(List<Widget> rows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var index = 0; index < rows.length; index++) ...[
+          rows[index],
+          if (index != rows.length - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSplitRow({
+    required List<TripSeat> leftSeats,
+    required List<TripSeat> rightSeats,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SeatGroup(seats: leftSeats, seatBuilder: seatBuilder),
+        const SizedBox(width: 34),
+        _SeatGroup(seats: rightSeats, seatBuilder: seatBuilder),
+      ],
+    );
+  }
+
+  Widget _buildFullRow(List<TripSeat> rowSeats) {
+    return _SeatGroup(seats: rowSeats, seatBuilder: seatBuilder);
+  }
+}
+
+class _SeatGroup extends StatelessWidget {
+  const _SeatGroup({required this.seats, required this.seatBuilder});
+
+  final List<TripSeat> seats;
+  final _SeatBuilder seatBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var index = 0; index < seats.length; index++) ...[
+          seatBuilder(seats[index]),
+          if (index != seats.length - 1) const SizedBox(width: 8),
+        ],
+      ],
     );
   }
 }

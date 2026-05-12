@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/repositories/payment_repository.dart';
@@ -33,9 +34,7 @@ class _PaymentCheckoutView extends StatefulWidget {
 class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
   final _formKey = GlobalKey<FormState>();
   final _cardHolderController = TextEditingController();
-  final _cardNumberController = TextEditingController(
-    text: '4242 4242 4242 4242',
-  );
+  final _cardNumberController = TextEditingController();
   final _expiryMonthController = TextEditingController(text: '12');
   final _expiryYearController = TextEditingController(text: '30');
   final _cvvController = TextEditingController(text: '123');
@@ -161,24 +160,6 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Test Kartlari',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Basarili odeme icin: 4242 4242 4242 4242'),
-                        const Text('Basarisiz odeme icin: 4000 0000 0000 0002'),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Form(
                       key: _formKey,
@@ -207,17 +188,19 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                           TextFormField(
                             controller: _cardNumberController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: const [
+                              _CardNumberInputFormatter(),
+                            ],
                             decoration: const InputDecoration(
                               labelText: 'Kart Numarasi',
+                              hintText: 'XXXX XXXX XXXX XXXX',
                               prefixIcon: Icon(Icons.credit_card_outlined),
                             ),
                             validator: (value) {
-                              final normalized = (value ?? '').replaceAll(
-                                ' ',
-                                '',
-                              );
-                              if (!RegExp(r'^\d{16}$').hasMatch(normalized)) {
-                                return 'Kart numarasi 16 haneli olmalidir';
+                              if (!RegExp(
+                                r'^\d{4} \d{4} \d{4} \d{4}$',
+                              ).hasMatch((value ?? '').trim())) {
+                                return 'Kart numarasi XXXX XXXX XXXX XXXX formatinda olmalidir';
                               }
                               return null;
                             },
@@ -316,6 +299,33 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CardNumberInputFormatter extends TextInputFormatter {
+  const _CardNumberInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limitedDigits = digits.length > 16 ? digits.substring(0, 16) : digits;
+    final buffer = StringBuffer();
+
+    for (var index = 0; index < limitedDigits.length; index++) {
+      if (index > 0 && index % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(limitedDigits[index]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

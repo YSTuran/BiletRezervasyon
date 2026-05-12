@@ -16,6 +16,53 @@ class ProfileViewModel extends BaseViewModel {
   final AuthRepository _authRepository;
 
   String get email => _authRepository.resolveEmail(preferredEmail: userEmail);
+  String get fullName => _authRepository.resolveFullName();
+
+  Future<void> updateFullName(String fullName) async {
+    if (isBusy) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await _authRepository.updateFullName(fullName);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (isBusy) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await _authRepository.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  Future<String?> deleteAccount({required String currentPassword}) async {
+    if (isBusy) {
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      await _authRepository.deleteAccount(currentPassword: currentPassword);
+      return AppRoutes.login;
+    } finally {
+      setBusy(false);
+    }
+  }
 
   Future<String?> logout() async {
     if (isBusy) {

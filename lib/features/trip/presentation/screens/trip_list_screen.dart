@@ -122,123 +122,132 @@ class _TripListViewState extends State<_TripListView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripListViewModel>();
-    final trips = viewModel.filteredTrips;
+    final trips = viewModel.pagedTrips;
     final companyHintMessage = viewModel.tripCreationHintMessage;
 
-    final filterBar = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Sefer Ara', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _originController,
-                onChanged: viewModel.updateOriginQuery,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Nereden',
-                  prefixIcon: Icon(Icons.flight_takeoff_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _destinationController,
-                onChanged: viewModel.updateDestinationQuery,
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  labelText: 'Nereye',
-                  prefixIcon: Icon(Icons.flight_land_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<TripSortOption>(
-                key: ValueKey(viewModel.sortOption),
-                initialValue: viewModel.sortOption,
-                decoration: const InputDecoration(
-                  labelText: 'Siralama',
-                  prefixIcon: Icon(Icons.sort_outlined),
-                ),
-                items: TripSortOption.values
-                    .map(
-                      (option) => DropdownMenuItem(
-                        value: option,
-                        child: Text(option.label),
+    final filterBar = viewModel.showsFilters
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Sefer Ara',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _originController,
+                      onChanged: viewModel.updateOriginQuery,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Nereden',
+                        prefixIcon: Icon(Icons.flight_takeoff_outlined),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    viewModel.updateSortOption(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Tumu'),
-                    selected: viewModel.transportFilter == null,
-                    onSelected: (_) {
-                      viewModel.updateTransportFilter(null);
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Otobus'),
-                    selected: viewModel.transportFilter == TransportType.bus,
-                    onSelected: (_) {
-                      viewModel.updateTransportFilter(TransportType.bus);
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Ucak'),
-                    selected: viewModel.transportFilter == TransportType.flight,
-                    onSelected: (_) {
-                      viewModel.updateTransportFilter(TransportType.flight);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _pickDepartureDate,
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    label: Text(
-                      viewModel.departureDateFilter == null
-                          ? 'Tarih Sec'
-                          : _formatDate(viewModel.departureDateFilter!),
                     ),
-                  ),
-                  if (viewModel.departureDateFilter != null)
-                    TextButton(
-                      onPressed: () {
-                        viewModel.updateDepartureDateFilter(null);
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _destinationController,
+                      onChanged: viewModel.updateDestinationQuery,
+                      textInputAction: TextInputAction.search,
+                      decoration: const InputDecoration(
+                        labelText: 'Nereye',
+                        prefixIcon: Icon(Icons.flight_land_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<TripSortOption>(
+                      key: ValueKey(viewModel.sortOption),
+                      initialValue: viewModel.sortOption,
+                      decoration: const InputDecoration(
+                        labelText: 'Siralama',
+                        prefixIcon: Icon(Icons.sort_outlined),
+                      ),
+                      items: TripSortOption.values
+                          .map(
+                            (option) => DropdownMenuItem(
+                              value: option,
+                              child: Text(option.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          viewModel.updateSortOption(value);
+                        }
                       },
-                      child: const Text('Tarihi Temizle'),
                     ),
-                  if (viewModel.hasActiveFilters)
-                    TextButton.icon(
-                      onPressed: _clearFilters,
-                      icon: const Icon(Icons.filter_alt_off_outlined),
-                      label: const Text('Filtreleri Temizle'),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Tumu'),
+                          selected: viewModel.transportFilter == null,
+                          onSelected: (_) {
+                            viewModel.updateTransportFilter(null);
+                          },
+                        ),
+                        ChoiceChip(
+                          label: const Text('Otobus'),
+                          selected:
+                              viewModel.transportFilter == TransportType.bus,
+                          onSelected: (_) {
+                            viewModel.updateTransportFilter(TransportType.bus);
+                          },
+                        ),
+                        ChoiceChip(
+                          label: const Text('Ucak'),
+                          selected:
+                              viewModel.transportFilter == TransportType.flight,
+                          onSelected: (_) {
+                            viewModel.updateTransportFilter(
+                              TransportType.flight,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _pickDepartureDate,
+                          icon: const Icon(Icons.calendar_today_outlined),
+                          label: Text(
+                            viewModel.departureDateFilter == null
+                                ? 'Tarih Sec'
+                                : _formatDate(viewModel.departureDateFilter!),
+                          ),
+                        ),
+                        if (viewModel.departureDateFilter != null)
+                          TextButton(
+                            onPressed: () {
+                              viewModel.updateDepartureDateFilter(null);
+                            },
+                            child: const Text('Tarihi Temizle'),
+                          ),
+                        if (viewModel.hasActiveFilters)
+                          TextButton.icon(
+                            onPressed: _clearFilters,
+                            icon: const Icon(Icons.filter_alt_off_outlined),
+                            label: const Text('Filtreleri Temizle'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ),
+          )
+        : null;
 
     Widget body;
     if (viewModel.isBusy && viewModel.trips.isEmpty) {
@@ -390,6 +399,7 @@ class _TripListViewState extends State<_TripListView> {
 
     return Scaffold(
       appBar: AppBar(title: Text(viewModel.title)),
+      bottomNavigationBar: _TripPaginationBar(viewModel: viewModel),
       floatingActionButton: viewModel.canCreateTrip
           ? FloatingActionButton.extended(
               onPressed: _openTripCreate,
@@ -399,7 +409,7 @@ class _TripListViewState extends State<_TripListView> {
           : null,
       body: Column(
         children: [
-          filterBar,
+          ?filterBar,
           if (companyHintMessage != null) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -427,6 +437,62 @@ class _TripListViewState extends State<_TripListView> {
           ],
           Expanded(child: body),
         ],
+      ),
+    );
+  }
+}
+
+class _TripPaginationBar extends StatelessWidget {
+  const _TripPaginationBar({required this.viewModel});
+
+  final TripListViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return BottomAppBar(
+      color: colorScheme.surface,
+      elevation: 8,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Onceki sayfa',
+                onPressed: viewModel.canGoPrevious
+                    ? viewModel.goToPreviousPage
+                    : null,
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Sayfa ${viewModel.currentPageNumber} / ${viewModel.totalPages}',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Her sayfada en fazla ${TripListViewModel.pageSize} sefer',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sonraki sayfa',
+                onPressed: viewModel.canGoNext ? viewModel.goToNextPage : null,
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

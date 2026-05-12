@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../data/repositories/trip_repository.dart';
+import '../../domain/models/seat_capacity_policy.dart';
 import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../view_models/trip_create_view_model.dart';
@@ -41,11 +42,11 @@ class _TripCreateViewState extends State<_TripCreateView> {
   final _formKey = GlobalKey<FormState>();
   final _originController = TextEditingController();
   final _destinationController = TextEditingController();
-  final _seatCapacityController = TextEditingController(text: '32');
   final _priceController = TextEditingController(text: '850');
 
   DateTime? _departureAt;
   DateTime? _arrivalAt;
+  int? _selectedSeatCapacity;
 
   TripCreateViewModel get _viewModel => context.read<TripCreateViewModel>();
 
@@ -53,7 +54,6 @@ class _TripCreateViewState extends State<_TripCreateView> {
   void dispose() {
     _originController.dispose();
     _destinationController.dispose();
-    _seatCapacityController.dispose();
     _priceController.dispose();
     super.dispose();
   }
@@ -112,9 +112,9 @@ class _TripCreateViewState extends State<_TripCreateView> {
       return;
     }
 
-    final seatCapacity = int.tryParse(_seatCapacityController.text.trim());
     final priceValue = _priceController.text.trim().replaceAll(',', '.');
     final price = double.tryParse(priceValue);
+    final seatCapacity = _selectedSeatCapacity;
     if (seatCapacity == null || price == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kapasite ve fiyat gecerli olmalidir.')),
@@ -165,12 +165,19 @@ class _TripCreateViewState extends State<_TripCreateView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripCreateViewModel>();
+    final transportType = viewModel.transportType;
+    if (transportType != null &&
+        !SeatCapacityPolicy.optionsFor(
+          transportType,
+        ).contains(_selectedSeatCapacity)) {
+      _selectedSeatCapacity = SeatCapacityPolicy.defaultFor(transportType);
+    }
 
     if (!viewModel.hasLoaded && viewModel.isBusy) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (!viewModel.canCreateTrip || viewModel.transportType == null) {
+    if (!viewModel.canCreateTrip || transportType == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Yeni Sefer')),
         body: Center(
@@ -240,9 +247,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                           prefixIcon: Icon(Icons.alt_route),
                         ),
                         child: Text(
-                          TripPresentationHelper.transportLabel(
-                            viewModel.transportType!,
-                          ),
+                          TripPresentationHelper.transportLabel(transportType),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -299,19 +304,34 @@ class _TripCreateViewState extends State<_TripCreateView> {
                         label: Text('Varis: ${_formatDateTime(_arrivalAt)}'),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _seatCapacityController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                      DropdownButtonFormField<int>(
+                        initialValue: _selectedSeatCapacity,
+                        decoration: InputDecoration(
                           labelText: 'Koltuk Kapasitesi',
-                          prefixIcon: Icon(Icons.airline_seat_recline_normal),
+                          helperText: SeatCapacityPolicy.layoutLabelFor(
+                            transportType,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.airline_seat_recline_normal,
+                          ),
                         ),
+                        items: SeatCapacityPolicy.optionsFor(transportType)
+                            .map(
+                              (capacity) => DropdownMenuItem<int>(
+                                value: capacity,
+                                child: Text('$capacity koltuk'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: viewModel.isBusy
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _selectedSeatCapacity = value;
+                                });
+                              },
                         validator: (value) {
-                          final parsed = int.tryParse((value ?? '').trim());
-                          if (parsed == null || parsed <= 0) {
-                            return 'Gecerli bir kapasite girin';
-                          }
-                          return null;
+                          return value == null ? 'Kapasite secin' : null;
                         },
                       ),
                       const SizedBox(height: 16),

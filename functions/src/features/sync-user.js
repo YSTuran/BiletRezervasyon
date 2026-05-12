@@ -1,4 +1,5 @@
 const {resolveAuthContext, resolveFullName, resolveRoleFromAuthToken} = require("../shared/auth");
+const {admin} = require("../config/runtime");
 const {withClient} = require("../shared/callable");
 const {
   resolveRequestedSelfServiceRole,
@@ -77,6 +78,50 @@ async function syncUserCore({auth, data, createError}) {
   );
 }
 
+async function deleteMyAccountCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError(
+        "unauthenticated",
+        "Bu islem icin giris yapmalisiniz.",
+    );
+  }
+
+  const firebaseUid = resolvedAuth.uid;
+
+  await withClient(
+      {createError, actionLabel: "Hesap silme"},
+      async (client) => {
+        await client.query(
+            `
+              UPDATE app_users
+              SET
+                firebase_uid = CONCAT('deleted:', firebase_uid, ':', id::text),
+                email = CONCAT('deleted-', id::text, '@deleted.local'),
+                full_name = 'Silinmis Kullanici',
+                updated_at = now()
+              WHERE firebase_uid = $1
+            `,
+            [firebaseUid],
+        );
+      },
+  );
+
+  try {
+    await admin.auth().deleteUser(firebaseUid);
+  } catch (error) {
+    if (error?.code !== "auth/user-not-found") {
+      throw createError(
+          "internal",
+          "Firebase hesabi silinemedi. Lutfen daha sonra tekrar deneyin.",
+      );
+    }
+  }
+
+  return {ok: true};
+}
+
 module.exports = {
+  deleteMyAccountCore,
   syncUserCore,
 };

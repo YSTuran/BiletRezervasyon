@@ -1,5 +1,7 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../../core/data/services/postgres_callable_service.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../services/user_sync_service.dart';
@@ -115,6 +117,23 @@ class AuthRepository {
 
   String? resolveCurrentUserId() => _firebaseAuth.currentUser?.uid;
 
+  String resolveFullName() {
+    final displayName = _firebaseAuth.currentUser?.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+
+    final email = _firebaseAuth.currentUser?.email?.trim() ?? '';
+    if (email.contains('@')) {
+      final prefix = email.split('@').first.replaceAll('.', ' ').trim();
+      if (prefix.isNotEmpty) {
+        return prefix;
+      }
+    }
+
+    return 'Yeni Kullanici';
+  }
+
   String resolveEmail({String? preferredEmail}) {
     final passedEmail = preferredEmail?.trim() ?? '';
     if (passedEmail.isNotEmpty) {
@@ -127,6 +146,76 @@ class AuthRepository {
     }
 
     return 'E-posta bilgisi yok';
+  }
+
+  Future<void> updateFullName(String fullName) async {
+    final trimmedFullName = fullName.trim();
+    if (trimmedFullName.isEmpty) {
+      throw const UserMessageException('Ad-soyad zorunludur.');
+    }
+
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw const UserMessageException('Aktif kullanici bulunamadi.');
+    }
+
+    try {
+      if ((user.displayName ?? '').trim() != trimmedFullName) {
+        await user.updateDisplayName(trimmedFullName);
+      }
+      await UserSyncService.syncSignedInUser(
+        preferredFullName: trimmedFullName,
+      );
+    } on FirebaseAuthException catch (error) {
+      throw UserMessageException(_mapProfileAuthError(error.code));
+    } on UserSyncException catch (error) {
+      throw UserMessageException(
+        _mapAuthSyncFailure(error.code, error.message),
+      );
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final trimmedCurrentPassword = currentPassword.trim();
+    if (trimmedCurrentPassword.isEmpty) {
+      throw const UserMessageException('Mevcut sifre zorunludur.');
+    }
+    if (newPassword.length < 6) {
+      throw const UserMessageException(
+        'Yeni sifre en az 6 karakter olmalidir.',
+      );
+    }
+
+    final user = _requirePasswordUser();
+    try {
+      await _reauthenticate(user: user, password: trimmedCurrentPassword);
+      await user.updatePassword(newPassword);
+    } on FirebaseAuthException catch (error) {
+      throw UserMessageException(_mapProfileAuthError(error.code));
+    }
+  }
+
+  Future<void> deleteAccount({required String currentPassword}) async {
+    final trimmedCurrentPassword = currentPassword.trim();
+    if (trimmedCurrentPassword.isEmpty) {
+      throw const UserMessageException('Hesabi silmek icin sifrenizi girin.');
+    }
+
+    final user = _requirePasswordUser();
+    try {
+      await _reauthenticate(user: user, password: trimmedCurrentPassword);
+      await PostgresCallableService.call(functionName: 'deleteMyAccount');
+      await _firebaseAuth.signOut();
+    } on FirebaseAuthException catch (error) {
+      throw UserMessageException(_mapProfileAuthError(error.code));
+    } on FirebaseFunctionsException catch (error) {
+      throw UserMessageException(
+        _mapProfileDeleteError(error.code, error.message),
+      );
+    }
   }
 
   Future<NavigationInstruction> _syncAfterAuth({
@@ -157,6 +246,29 @@ class AuthRepository {
         'Hesap senkronizasyonu tamamlanamadi. Lutfen tekrar deneyin.',
       );
     }
+  }
+
+  User _requirePasswordUser() {
+    final user = _firebaseAuth.currentUser;
+    final email = user?.email?.trim() ?? '';
+    if (user == null || email.isEmpty) {
+      throw const UserMessageException(
+        'Aktif e-posta/sifre kullanicisi bulunamadi.',
+      );
+    }
+    return user;
+  }
+
+  Future<void> _reauthenticate({
+    required User user,
+    required String password,
+  }) async {
+    final email = user.email?.trim() ?? '';
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(credential);
   }
 
   String _mapLoginError(String code) {
@@ -193,6 +305,41 @@ class AuthRepository {
         return 'Ag baglantisi hatasi. Interneti kontrol edin.';
       default:
         return 'Kayit tamamlanamadi: $code';
+    }
+  }
+
+  String _mapProfileAuthError(String code) {
+    switch (code) {
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Mevcut sifre hatali.';
+      case 'weak-password':
+        return 'Yeni sifre gucsuz. En az 6 karakter kullanin.';
+      case 'requires-recent-login':
+        return 'Bu islem icin tekrar giris yapmaniz gerekiyor.';
+      case 'too-many-requests':
+        return 'Cok fazla deneme yapildi. Lutfen daha sonra tekrar deneyin.';
+      case 'network-request-failed':
+        return 'Ag baglantisi hatasi. Interneti kontrol edin.';
+      default:
+        return 'Profil islemi tamamlanamadi: $code';
+    }
+  }
+
+  String _mapProfileDeleteError(String code, String? message) {
+    final trimmedMessage = (message ?? '').trim();
+    if (trimmedMessage.isNotEmpty) {
+      return trimmedMessage;
+    }
+
+    switch (code) {
+      case 'unauthenticated':
+        return 'Hesap silmek icin giris yapmalisiniz.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+      default:
+        return 'Hesap silme islemi tamamlanamadi.';
     }
   }
 

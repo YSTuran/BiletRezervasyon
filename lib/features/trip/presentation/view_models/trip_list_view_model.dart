@@ -6,6 +6,8 @@ import '../models/trip_search_filter.dart';
 import '../models/trip_sort_option.dart';
 
 class TripListViewModel extends BaseViewModel {
+  static const int pageSize = 10;
+
   TripListViewModel({required TripRepository repository, required this.role})
     : _repository = repository;
 
@@ -15,8 +17,12 @@ class TripListViewModel extends BaseViewModel {
   List<Trip> _trips = const [];
   String? _errorMessage;
   TripSearchFilter _filter = const TripSearchFilter();
+  int _currentPageIndex = 0;
 
   List<Trip> get trips => _trips;
+  int get currentPageIndex => _currentPageIndex;
+  int get currentPageNumber => _currentPageIndex + 1;
+  bool get showsFilters => role == UserRole.normalUser;
 
   List<Trip> get filteredTrips {
     final originQuery = _normalizeSearchText(_filter.originQuery);
@@ -50,6 +56,29 @@ class TripListViewModel extends BaseViewModel {
     filtered.sort(_tripComparatorFor(_filter.sortOption));
     return filtered;
   }
+
+  List<Trip> get pagedTrips {
+    final filtered = filteredTrips;
+    if (filtered.isEmpty) {
+      return const [];
+    }
+
+    final start = _currentPageIndex * pageSize;
+    final clampedStart = start.clamp(0, filtered.length);
+    final end = (clampedStart + pageSize).clamp(0, filtered.length);
+    return filtered.sublist(clampedStart, end);
+  }
+
+  int get totalPages {
+    final count = filteredTrips.length;
+    if (count == 0) {
+      return 1;
+    }
+    return ((count - 1) ~/ pageSize) + 1;
+  }
+
+  bool get canGoPrevious => _currentPageIndex > 0;
+  bool get canGoNext => _currentPageIndex < totalPages - 1;
 
   String? get errorMessage => _errorMessage;
   TripSearchFilter get filter => _filter;
@@ -92,6 +121,7 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = _filter.copyWith(transportType: transportType);
+    _resetPage();
     notifyListeners();
   }
 
@@ -100,6 +130,7 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = _filter.copyWith(originQuery: value);
+    _resetPage();
     notifyListeners();
   }
 
@@ -108,6 +139,7 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = _filter.copyWith(destinationQuery: value);
+    _resetPage();
     notifyListeners();
   }
 
@@ -120,6 +152,7 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = _filter.copyWith(departureDate: value);
+    _resetPage();
     notifyListeners();
   }
 
@@ -128,6 +161,7 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = _filter.copyWith(sortOption: value);
+    _resetPage();
     notifyListeners();
   }
 
@@ -136,6 +170,23 @@ class TripListViewModel extends BaseViewModel {
       return;
     }
     _filter = const TripSearchFilter();
+    _resetPage();
+    notifyListeners();
+  }
+
+  void goToPreviousPage() {
+    if (!canGoPrevious) {
+      return;
+    }
+    _currentPageIndex--;
+    notifyListeners();
+  }
+
+  void goToNextPage() {
+    if (!canGoNext) {
+      return;
+    }
+    _currentPageIndex++;
     notifyListeners();
   }
 
@@ -148,12 +199,27 @@ class TripListViewModel extends BaseViewModel {
     try {
       _errorMessage = null;
       _trips = await _repository.fetchTrips(role: role);
+      _clampPage();
       notifyListeners();
     } catch (_) {
       _errorMessage = 'Seferler su anda yuklenemedi.';
       notifyListeners();
     } finally {
       setBusy(false);
+    }
+  }
+
+  void _resetPage() {
+    _currentPageIndex = 0;
+  }
+
+  void _clampPage() {
+    final maxPageIndex = totalPages - 1;
+    if (_currentPageIndex > maxPageIndex) {
+      _currentPageIndex = maxPageIndex;
+    }
+    if (_currentPageIndex < 0) {
+      _currentPageIndex = 0;
     }
   }
 

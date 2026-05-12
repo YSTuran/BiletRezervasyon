@@ -2,6 +2,7 @@ import '../../../../core/presentation/view_models/base_view_model.dart';
 import '../../../../models/enums.dart';
 import '../../../company/data/repositories/company_repository.dart';
 import '../../data/repositories/trip_repository.dart';
+import '../../domain/models/seat_capacity_policy.dart';
 import '../../domain/models/trip.dart';
 
 class TripFormException implements Exception {
@@ -82,6 +83,14 @@ class TripCreateViewModel extends BaseViewModel {
     final selectedTransportType = transportType;
     if (!canCreateTrip || selectedTransportType == null) {
       throw TripFormException(blockedMessage);
+    }
+    if (!SeatCapacityPolicy.isAllowed(
+      transportType: selectedTransportType,
+      seatCapacity: seatCapacity,
+    )) {
+      throw const TripFormException(
+        'Koltuk kapasitesi secili ulasim turu icin gecerli degil.',
+      );
     }
 
     setBusy(true);

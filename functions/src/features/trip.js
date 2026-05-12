@@ -23,6 +23,26 @@ const {
 } = require("../shared/postgres");
 const {createTripCode, isTripCodeConflict} = require("./trip-code");
 
+const SEAT_CAPACITY_OPTIONS_BY_TRANSPORT = {
+  bus: [30, 33, 36, 39, 42],
+  flight: [150, 160, 170, 180, 190],
+};
+
+function assertAllowedSeatCapacity({
+  createError,
+  seatCapacity,
+  transportType,
+}) {
+  const allowedCapacities =
+    SEAT_CAPACITY_OPTIONS_BY_TRANSPORT[transportType] || [];
+  if (!allowedCapacities.includes(seatCapacity)) {
+    throw createError(
+        "invalid-argument",
+        "Koltuk kapasitesi secili ulasim turu icin gecerli degil.",
+    );
+  }
+}
+
 async function insertTripWithUniqueCode({
   client,
   appUser,
@@ -247,6 +267,11 @@ async function createTripCore({auth, data, createError}) {
       data?.transportType,
       createError,
   );
+  assertAllowedSeatCapacity({
+    createError,
+    seatCapacity,
+    transportType: requestedTransportType,
+  });
 
   return withClient(
       {createError, actionLabel: "Sefer olusturma"},
