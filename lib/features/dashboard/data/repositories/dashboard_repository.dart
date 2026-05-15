@@ -17,7 +17,7 @@ class DashboardRepository {
       );
     } catch (_) {
       throw const DashboardActionException(
-        'Panel verileri beklenen formatta alinamadi.',
+        'Panel verileri beklenen formatta alınamadı.',
       );
     }
   }
@@ -34,7 +34,7 @@ class DashboardRepository {
       );
     } catch (_) {
       throw const DashboardActionException(
-        'Panel verileri beklenen formatta alinamadi.',
+        'Panel verileri beklenen formatta alınamadı.',
       );
     }
   }
@@ -61,22 +61,22 @@ class DashboardRepository {
 
     switch (code) {
       case 'permission-denied':
-        return 'Bu panele erismek icin yeterli yetkiniz bulunmuyor.';
+        return 'Bu panele erişmek için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Panel verileri su anda alinamadi. Lutfen tekrar deneyin.';
+        return 'Panel verileri şu anda alınamadı. Lütfen tekrar deneyin.';
       case 'failed-precondition':
       case 'invalid-argument':
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Panel verileri yuklenemedi.';
+        return 'Panel verileri yüklenemedi.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Panel verileri yuklenemedi.';
+        return 'Panel verileri yüklenemedi.';
     }
   }
 }

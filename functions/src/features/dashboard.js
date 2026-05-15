@@ -110,7 +110,7 @@ function mapRejectionReason(row) {
 async function getCompanyOperationsDashboardCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(
@@ -321,7 +321,7 @@ async function getCompanyOperationsDashboardCore({auth, data, createError}) {
 async function getAdminDashboardCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(

@@ -108,7 +108,7 @@ class AuthRepository {
       await _signOutSilently();
       return const NavigationInstruction(
         route: AppRoutes.login,
-        message: 'Oturum dogrulanamadi. Lutfen tekrar giris yapin.',
+        message: 'Oturum doğrulanamadı. Lütfen tekrar giriş yapın.',
       );
     }
   }
@@ -116,6 +116,13 @@ class AuthRepository {
   Future<void> signOut() => _firebaseAuth.signOut();
 
   String? resolveCurrentUserId() => _firebaseAuth.currentUser?.uid;
+
+  Future<UserRole> resolveCurrentUserRole() async {
+    final syncedUser = await UserSyncService.syncSignedInUser(
+      preferredFullName: _firebaseAuth.currentUser?.displayName,
+    );
+    return syncedUser.role;
+  }
 
   String resolveFullName() {
     final displayName = _firebaseAuth.currentUser?.displayName?.trim() ?? '';
@@ -131,7 +138,7 @@ class AuthRepository {
       }
     }
 
-    return 'Yeni Kullanici';
+    return 'Yeni Kullanıcı';
   }
 
   String resolveEmail({String? preferredEmail}) {
@@ -156,7 +163,7 @@ class AuthRepository {
 
     final user = _firebaseAuth.currentUser;
     if (user == null) {
-      throw const UserMessageException('Aktif kullanici bulunamadi.');
+      throw const UserMessageException('Aktif kullanıcı bulunamadı.');
     }
 
     try {
@@ -181,11 +188,11 @@ class AuthRepository {
   }) async {
     final trimmedCurrentPassword = currentPassword.trim();
     if (trimmedCurrentPassword.isEmpty) {
-      throw const UserMessageException('Mevcut sifre zorunludur.');
+      throw const UserMessageException('Mevcut şifre zorunludur.');
     }
     if (newPassword.length < 6) {
       throw const UserMessageException(
-        'Yeni sifre en az 6 karakter olmalidir.',
+        'Yeni şifre en az 6 karakter olmalıdır.',
       );
     }
 
@@ -201,7 +208,7 @@ class AuthRepository {
   Future<void> deleteAccount({required String currentPassword}) async {
     final trimmedCurrentPassword = currentPassword.trim();
     if (trimmedCurrentPassword.isEmpty) {
-      throw const UserMessageException('Hesabi silmek icin sifrenizi girin.');
+      throw const UserMessageException('Hesabı silmek için şifrenizi girin.');
     }
 
     final user = _requirePasswordUser();
@@ -243,7 +250,7 @@ class AuthRepository {
         deleteCurrentUser: deleteCurrentUserOnFailure,
       );
       throw const UserMessageException(
-        'Hesap senkronizasyonu tamamlanamadi. Lutfen tekrar deneyin.',
+        'Hesap senkronizasyonu tamamlanamadı. Lütfen tekrar deneyin.',
       );
     }
   }
@@ -253,7 +260,7 @@ class AuthRepository {
     final email = user?.email?.trim() ?? '';
     if (user == null || email.isEmpty) {
       throw const UserMessageException(
-        'Aktif e-posta/sifre kullanicisi bulunamadi.',
+        'Aktif e-posta/şifre kullanıcısı bulunamadı.',
       );
     }
     return user;
@@ -274,20 +281,20 @@ class AuthRepository {
   String _mapLoginError(String code) {
     switch (code) {
       case 'invalid-email':
-        return 'E-posta formati gecersiz.';
+        return 'E-posta formatı geçersiz.';
       case 'user-disabled':
-        return 'Bu kullanici devre disi birakilmis.';
+        return 'Bu kullanıcı devre dışı bırakılmış.';
       case 'user-not-found':
-        return 'Bu e-posta icin hesap bulunamadi.';
+        return 'Bu e-posta için hesap bulunamadı.';
       case 'wrong-password':
       case 'invalid-credential':
-        return 'E-posta veya sifre hatali.';
+        return 'E-posta veya şifre hatalı.';
       case 'too-many-requests':
-        return 'Cok fazla deneme yapildi. Lutfen daha sonra tekrar deneyin.';
+        return 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
       case 'network-request-failed':
-        return 'Ag baglantisi hatasi. Interneti kontrol edin.';
+        return 'Ağ bağlantısı hatası. İnterneti kontrol edin.';
       default:
-        return 'Giris yapilamadi: $code';
+        return 'Giriş yapılamadı: $code';
     }
   }
 
@@ -296,15 +303,15 @@ class AuthRepository {
       case 'email-already-in-use':
         return 'Bu e-posta ile zaten bir hesap var.';
       case 'invalid-email':
-        return 'E-posta formati gecersiz.';
+        return 'E-posta formatı geçersiz.';
       case 'weak-password':
-        return 'Sifre gucsuz. En az 6 karakter kullanin.';
+        return 'Şifre güçsüz. En az 6 karakter kullanın.';
       case 'operation-not-allowed':
-        return 'Email-sifre kaydi su an kapali.';
+        return 'E-posta/şifre kaydı şu an kapalı.';
       case 'network-request-failed':
-        return 'Ag baglantisi hatasi. Interneti kontrol edin.';
+        return 'Ağ bağlantısı hatası. İnterneti kontrol edin.';
       default:
-        return 'Kayit tamamlanamadi: $code';
+        return 'Kayıt tamamlanamadı: $code';
     }
   }
 
@@ -312,17 +319,17 @@ class AuthRepository {
     switch (code) {
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Mevcut sifre hatali.';
+        return 'Mevcut şifre hatalı.';
       case 'weak-password':
-        return 'Yeni sifre gucsuz. En az 6 karakter kullanin.';
+        return 'Yeni şifre güçsüz. En az 6 karakter kullanın.';
       case 'requires-recent-login':
-        return 'Bu islem icin tekrar giris yapmaniz gerekiyor.';
+        return 'Bu işlem için tekrar giriş yapmanız gerekiyor.';
       case 'too-many-requests':
-        return 'Cok fazla deneme yapildi. Lutfen daha sonra tekrar deneyin.';
+        return 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
       case 'network-request-failed':
-        return 'Ag baglantisi hatasi. Interneti kontrol edin.';
+        return 'Ağ bağlantısı hatası. İnterneti kontrol edin.';
       default:
-        return 'Profil islemi tamamlanamadi: $code';
+        return 'Profil işlemi tamamlanamadı: $code';
     }
   }
 
@@ -334,12 +341,12 @@ class AuthRepository {
 
     switch (code) {
       case 'unauthenticated':
-        return 'Hesap silmek icin giris yapmalisiniz.';
+        return 'Hesap silmek için giriş yapmalısınız.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       default:
-        return 'Hesap silme islemi tamamlanamadi.';
+        return 'Hesap silme işlemi tamamlanamadı.';
     }
   }
 
@@ -376,33 +383,33 @@ class AuthRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Sunucu senkron fonksiyonu bulunamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucu senkron fonksiyonu bulunamadı. Lütfen daha sonra tekrar deneyin.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       case 'permission-denied':
       case 'unauthenticated':
-        return 'Rol dogrulamasi basarisiz oldu.';
+        return 'Rol doğrulaması başarısız oldu.';
       case 'failed-precondition':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sunucu yapilandirmasi eksik veya hatali.';
+        return 'Sunucu yapılandırması eksik veya hatalı.';
       case 'data-loss':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sunucudan gecerli rol bilgisi alinamadi.';
+        return 'Sunucudan geçerli rol bilgisi alınamadı.';
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Kullanici kaydi sunucuya yazilamadi.';
+        return 'Kullanıcı kaydı sunucuya yazılamadı.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Hesap senkronizasyonu tamamlanamadi.';
+        return 'Hesap senkronizasyonu tamamlanamadı.';
     }
   }
 
@@ -411,33 +418,33 @@ class AuthRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Sunucu senkron fonksiyonu bulunamadi. Lutfen tekrar giris yapin.';
+        return 'Sunucu senkron fonksiyonu bulunamadı. Lütfen tekrar giriş yapın.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar giris yapin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar giriş yapın.';
       case 'permission-denied':
       case 'unauthenticated':
-        return 'Yetki dogrulanamadi. Lutfen tekrar giris yapin.';
+        return 'Yetki doğrulanamadı. Lütfen tekrar giriş yapın.';
       case 'failed-precondition':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sunucu yapilandirmasi eksik veya hatali.';
+        return 'Sunucu yapılandırması eksik veya hatalı.';
       case 'data-loss':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sunucudan gecerli rol bilgisi alinamadi.';
+        return 'Sunucudan geçerli rol bilgisi alınamadı.';
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sunucuya baglanirken hata olustu.';
+        return 'Sunucuya bağlanırken hata oluştu.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Rol bilgisi alinamadi. Lutfen tekrar giris yapin.';
+        return 'Rol bilgisi alınamadı. Lütfen tekrar giriş yapın.';
     }
   }
 }

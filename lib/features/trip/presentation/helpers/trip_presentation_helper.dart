@@ -31,8 +31,8 @@ class TripVisualStyle {
 abstract final class TripPresentationHelper {
   static String transportLabel(TransportType transportType) {
     return switch (transportType) {
-      TransportType.bus => 'Otobus',
-      TransportType.flight => 'Ucak',
+      TransportType.bus => 'Otobüs',
+      TransportType.flight => 'Uçak',
     };
   }
 

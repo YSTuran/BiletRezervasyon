@@ -101,7 +101,7 @@ class _LoginViewState extends State<_LoginView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Hesabiniza giris yapin',
+                          'Hesabınıza giriş yapın',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
@@ -134,7 +134,7 @@ class _LoginViewState extends State<_LoginView> {
                             _login();
                           },
                           decoration: InputDecoration(
-                            labelText: 'Sifre',
+                            labelText: 'Şifre',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               onPressed: viewModel.togglePasswordVisibility,
@@ -147,10 +147,10 @@ class _LoginViewState extends State<_LoginView> {
                           ),
                           validator: (value) {
                             if ((value ?? '').isEmpty) {
-                              return 'Sifre zorunludur';
+                              return 'Şifre zorunludur';
                             }
                             if ((value ?? '').length < 6) {
-                              return 'Sifre en az 6 karakter olmalidir';
+                              return 'Şifre en az 6 karakter olmalıdır';
                             }
                             return null;
                           },
@@ -168,7 +168,7 @@ class _LoginViewState extends State<_LoginView> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Giris Yap'),
+                                : const Text('Giriş Yap'),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -180,7 +180,7 @@ class _LoginViewState extends State<_LoginView> {
                                     context,
                                   ).pushNamed(AppRoutes.register);
                                 },
-                          child: const Text('Hesabin yok mu? Kayit ol'),
+                          child: const Text('Hesabın yok mu? Kayıt ol'),
                         ),
                         const SizedBox(height: 4),
                       ],

@@ -17,7 +17,7 @@ class ProfileScreen extends StatelessWidget {
         userEmail: userEmail,
         onLogout: onLogout,
         authRepository: context.read<AuthRepository>(),
-      ),
+      )..load(),
       child: const _ProfileView(),
     );
   }
@@ -85,7 +85,7 @@ class _ProfileViewState extends State<_ProfileView> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Cikis yapilamadi.')));
+      ).showSnackBar(const SnackBar(content: Text('Çıkış yapılamadı.')));
     }
   }
 
@@ -103,7 +103,7 @@ class _ProfileViewState extends State<_ProfileView> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Ad-soyad guncellendi.')));
+      ).showSnackBar(const SnackBar(content: Text('Ad-soyad güncellendi.')));
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
@@ -132,7 +132,7 @@ class _ProfileViewState extends State<_ProfileView> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sifre guncellendi.')));
+      ).showSnackBar(const SnackBar(content: Text('Şifre güncellendi.')));
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
@@ -147,7 +147,7 @@ class _ProfileViewState extends State<_ProfileView> {
     final password = _deletePasswordController.text;
     if (password.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Hesabi silmek icin sifrenizi girin.')),
+        const SnackBar(content: Text('Hesabı silmek için şifrenizi girin.')),
       );
       return;
     }
@@ -156,22 +156,22 @@ class _ProfileViewState extends State<_ProfileView> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Hesabi Sil'),
+          title: const Text('Hesabı Sil'),
           content: const Text(
-            'Bu islem oturumunuzu kapatir ve hesabinizi kalici olarak siler. Devam etmek istiyor musunuz?',
+            'Bu işlem oturumunuzu kapatır ve hesabınızı kalıcı olarak siler. Devam etmek istiyor musunuz?',
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(false);
               },
-              child: const Text('Vazgec'),
+              child: const Text('Vazgeç'),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(true);
               },
-              child: const Text('Hesabi Sil'),
+              child: const Text('Hesabı Sil'),
             ),
           ],
         );
@@ -329,14 +329,14 @@ class _ProfileViewState extends State<_ProfileView> {
                               _saveName(context);
                             },
                       icon: const Icon(Icons.save_outlined),
-                      label: const Text('Ad-Soyadi Kaydet'),
+                      label: const Text('Ad-Soyadı Kaydet'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildSection(
                   context: context,
-                  title: 'Sifre Degistir',
+                  title: 'Şifre Değiştir',
                   icon: Icons.lock_reset_outlined,
                   children: [
                     Form(
@@ -347,12 +347,12 @@ class _ProfileViewState extends State<_ProfileView> {
                             controller: _currentPasswordController,
                             obscureText: true,
                             decoration: const InputDecoration(
-                              labelText: 'Mevcut sifre',
+                              labelText: 'Mevcut şifre',
                               prefixIcon: Icon(Icons.lock_outline),
                             ),
                             validator: (value) {
                               if ((value ?? '').trim().isEmpty) {
-                                return 'Mevcut sifre zorunludur';
+                                return 'Mevcut şifre zorunludur';
                               }
                               return null;
                             },
@@ -362,7 +362,7 @@ class _ProfileViewState extends State<_ProfileView> {
                             controller: _newPasswordController,
                             obscureText: true,
                             decoration: const InputDecoration(
-                              labelText: 'Yeni sifre',
+                              labelText: 'Yeni şifre',
                               prefixIcon: Icon(Icons.password_outlined),
                             ),
                             validator: (value) {
@@ -377,12 +377,12 @@ class _ProfileViewState extends State<_ProfileView> {
                             controller: _confirmPasswordController,
                             obscureText: true,
                             decoration: const InputDecoration(
-                              labelText: 'Yeni sifre tekrar',
+                              labelText: 'Yeni şifre tekrar',
                               prefixIcon: Icon(Icons.done_all_outlined),
                             ),
                             validator: (value) {
                               if (value != _newPasswordController.text) {
-                                return 'Sifreler eslesmiyor';
+                                return 'Şifreler eşleşmiyor';
                               }
                               return null;
                             },
@@ -398,14 +398,14 @@ class _ProfileViewState extends State<_ProfileView> {
                               _changePassword(context);
                             },
                       icon: const Icon(Icons.key_outlined),
-                      label: const Text('Sifreyi Guncelle'),
+                      label: const Text('Şifreyi Güncelle'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildSection(
                   context: context,
-                  title: 'Hesap Islemleri',
+                  title: 'Hesap İşlemleri',
                   icon: Icons.manage_accounts_outlined,
                   children: [
                     FilledButton.tonalIcon(
@@ -415,27 +415,29 @@ class _ProfileViewState extends State<_ProfileView> {
                               _logout(context);
                             },
                       icon: const Icon(Icons.logout),
-                      label: const Text('Cikis Yap'),
+                      label: const Text('Çıkış Yap'),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _deletePasswordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Hesap silme sifresi',
-                        prefixIcon: Icon(Icons.lock_outline),
+                    if (viewModel.canDeleteAccount) ...[
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _deletePasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Hesap silme şifresi',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: viewModel.isBusy
-                          ? null
-                          : () {
-                              _deleteAccount(context);
-                            },
-                      icon: const Icon(Icons.delete_forever_outlined),
-                      label: const Text('Hesabi Sil'),
-                    ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: viewModel.isBusy
+                            ? null
+                            : () {
+                                _deleteAccount(context);
+                              },
+                        icon: const Icon(Icons.delete_forever_outlined),
+                        label: const Text('Hesabı Sil'),
+                      ),
+                    ],
                   ],
                 ),
               ],

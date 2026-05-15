@@ -55,11 +55,11 @@ function serializePaymentForClient(row, actionAt = new Date()) {
 async function listPaymentsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(
-      {createError, actionLabel: "Odeme listeleme"},
+      {createError, actionLabel: "Ödeme listeleme"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -130,7 +130,7 @@ async function listPaymentsCore({auth, data, createError}) {
 async function getReservationPaymentCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const reservationId = normalizeTrimmedString(data?.reservationId);
@@ -139,7 +139,7 @@ async function getReservationPaymentCore({auth, data, createError}) {
   }
 
   return withClient(
-      {createError, actionLabel: "Odeme bilgisi getirme"},
+      {createError, actionLabel: "Ödeme bilgisi getirme"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -174,7 +174,7 @@ async function getReservationPaymentCore({auth, data, createError}) {
 async function processFakePaymentCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const reservationId = normalizeTrimmedString(data?.reservationId);
@@ -218,7 +218,7 @@ async function processFakePaymentCore({auth, data, createError}) {
   }
 
   return withClient(
-      {createError, actionLabel: "Sahte odeme isleme"},
+      {createError, actionLabel: "Sahte ödeme işleme"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -239,13 +239,13 @@ async function processFakePaymentCore({auth, data, createError}) {
         if (reservation.status === "expired") {
           throw createError(
               "failed-precondition",
-              "Odeme suresi dolan rezervasyonlar icin odeme yapilamaz.",
+              "Ödeme süresi dolan rezervasyonlar için ödeme yapılamaz.",
           );
         }
         if (reservation.status !== "approved") {
           throw createError(
               "failed-precondition",
-              "Odeme yalnizca onaylanmis rezervasyonlar icin yapilabilir.",
+              "Ödeme yalnızca onaylanmış rezervasyonlar için yapılabilir.",
           );
         }
 
@@ -257,10 +257,10 @@ async function processFakePaymentCore({auth, data, createError}) {
             createError,
         );
         if (!payment) {
-          throw createError("not-found", "Odeme kaydi bulunamadi.");
+          throw createError("not-found", "Ödeme kaydı bulunamadı.");
         }
         if (payment.status === "paid") {
-          throw createError("failed-precondition", "Bu odeme zaten tamamlandi.");
+          throw createError("failed-precondition", "Bu ödeme zaten tamamlandı.");
         }
 
         const isFailedCard = cardNumber === "4000000000000002";
@@ -323,7 +323,7 @@ async function processFakePaymentCore({auth, data, createError}) {
 async function requestRefundCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const reservationId = normalizeTrimmedString(data?.reservationId);
@@ -332,7 +332,7 @@ async function requestRefundCore({auth, data, createError}) {
   }
 
   return withClient(
-      {createError, actionLabel: "Iade islemi"},
+      {createError, actionLabel: "İade işlemi"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -350,7 +350,7 @@ async function requestRefundCore({auth, data, createError}) {
         if (reservation.status !== "paid") {
           throw createError(
               "failed-precondition",
-              "Iade yalnizca odenmis rezervasyonlar icin yapilabilir.",
+              "İade yalnızca ödenmiş rezervasyonlar için yapılabilir.",
           );
         }
 
@@ -361,18 +361,18 @@ async function requestRefundCore({auth, data, createError}) {
             createError,
         );
         if (!payment) {
-          throw createError("not-found", "Odeme kaydi bulunamadi.");
+          throw createError("not-found", "Ödeme kaydı bulunamadı.");
         }
         if (payment.status === "refunded") {
           throw createError(
               "failed-precondition",
-              "Bu odeme icin iade zaten tamamlanmis.",
+              "Bu ödeme için iade zaten tamamlanmış.",
           );
         }
         if (payment.status !== "paid") {
           throw createError(
               "failed-precondition",
-              "Iade yalnizca tamamlanmis odemeler icin yapilabilir.",
+              "İade yalnızca tamamlanmış ödemeler için yapılabilir.",
           );
         }
 
@@ -401,7 +401,7 @@ async function requestRefundCore({auth, data, createError}) {
           if (paymentUpdateResult.rowCount === 0) {
             throw createError(
                 "failed-precondition",
-                "Odeme durumu degistigi icin iade tamamlanamadi.",
+                "Ödeme durumu değiştiği için iade tamamlanamadı.",
             );
           }
 
@@ -421,7 +421,7 @@ async function requestRefundCore({auth, data, createError}) {
           if (reservationUpdateResult.rowCount === 0) {
             throw createError(
                 "failed-precondition",
-                "Rezervasyon durumu degistigi icin iade tamamlanamadi.",
+                "Rezervasyon durumu değiştiği için iade tamamlanamadı.",
             );
           }
 

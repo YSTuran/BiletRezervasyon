@@ -52,7 +52,7 @@ class PaymentRepository {
 
       final payment = _parsePayment(response['payment']);
       if (payment == null) {
-        throw const PaymentActionException('Odeme sonucu alinamadi.');
+        throw const PaymentActionException('Ödeme sonucu alınamadı.');
       }
 
       return FakePaymentResult(
@@ -75,7 +75,7 @@ class PaymentRepository {
 
       final payment = _parsePayment(response['payment']);
       if (payment == null) {
-        throw const PaymentActionException('Iade sonucu alinamadi.');
+        throw const PaymentActionException('İade sonucu alınamadı.');
       }
 
       return RefundPaymentResult(
@@ -83,7 +83,7 @@ class PaymentRepository {
         refundAmountMinor: response['refundAmountMinor'] as int? ?? 0,
         refundSummary:
             (response['refundSummary'] as String?)?.trim() ??
-            'Iade islemi tamamlandi.',
+            'İade işlemi tamamlandı.',
       );
     } on FirebaseFunctionsException catch (error) {
       throw PaymentActionException(_mapPaymentError(error.code, error.message));
@@ -116,24 +116,24 @@ class PaymentRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Odeme kaydi bulunamadi.';
+        return 'Ödeme kaydı bulunamadı.';
       case 'permission-denied':
-        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+        return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       case 'failed-precondition':
       case 'invalid-argument':
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Odeme islemi tamamlanamadi.';
+        return 'Ödeme işlemi tamamlanamadı.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Odeme islemi tamamlanamadi.';
+        return 'Ödeme işlemi tamamlanamadı.';
     }
   }
 }

@@ -107,7 +107,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
     final selectedSeatId = _selectedSeatId;
     if (selectedSeatId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lutfen once bir koltuk secin.')),
+        const SnackBar(content: Text('Lütfen önce bir koltuk seçin.')),
       );
       return;
     }
@@ -124,7 +124,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
         _selectedSeatId = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Rezervasyon talebi olusturuldu.')),
+        const SnackBar(content: Text('Rezervasyon talebi oluşturuldu.')),
       );
     } on TripReviewException catch (error) {
       if (!context.mounted) {
@@ -186,7 +186,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
               ),
               if (reservation.status == ReservationStatus.approved)
                 Text(
-                  'Odeme Son Tarihi: ${TripPresentationHelper.formatDateTime(reservation.paymentDeadlineAt)}',
+                  'Ödeme Son Tarihi: ${TripPresentationHelper.formatDateTime(reservation.paymentDeadlineAt)}',
                 ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -229,13 +229,13 @@ class _TripDetailViewState extends State<_TripDetailView> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Musaid bir koltuk secip rezervasyon talebi olusturabilirsiniz.',
+              'Müsait bir koltuk seçip rezervasyon talebi oluşturabilirsiniz.',
             ),
             const SizedBox(height: 12),
             Text(
               selectedSeat == null
-                  ? 'Secilen koltuk: Yok'
-                  : 'Secilen koltuk: ${selectedSeat.seatNumber}',
+                  ? 'Seçilen koltuk: Yok'
+                  : 'Seçilen koltuk: ${selectedSeat.seatNumber}',
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -345,16 +345,16 @@ class _TripDetailViewState extends State<_TripDetailView> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Tur: ${TripPresentationHelper.transportLabel(trip.transportType)}',
+                      'Tür: ${TripPresentationHelper.transportLabel(trip.transportType)}',
                     ),
                     Text(
                       'Durum: ${TripPresentationHelper.statusLabel(trip.status)}',
                     ),
                     Text(
-                      'Kalkis: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
+                      'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                     ),
                     Text(
-                      'Varis: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
+                      'Varış: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
                     ),
                     Text(
                       'Sure: ${TripPresentationHelper.formatDuration(trip)}',
@@ -401,7 +401,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Admin Islemleri',
+                        'Admin İşlemleri',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
@@ -500,8 +500,8 @@ class _SeatLayoutView extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   transportType == TransportType.bus
-                      ? '2+1 koltuk duzeni, son sira dortlu'
-                      : '3+3 kabin duzeni',
+                      ? '2+1 koltuk düzeni, son sıra dörtlü'
+                      : '3+3 kabin düzeni',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ],

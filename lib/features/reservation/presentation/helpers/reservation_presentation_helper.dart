@@ -12,7 +12,7 @@ abstract final class ReservationPresentationHelper {
       ReservationStatus.pendingApproval => 'Onay Bekliyor',
       ReservationStatus.approved => 'Onaylandi',
       ReservationStatus.rejected => 'Reddedildi',
-      ReservationStatus.cancelledByUser => 'Kullanici Iptal Etti',
+      ReservationStatus.cancelledByUser => 'Kullanıcı İptal Etti',
       ReservationStatus.expired => 'Suresi Doldu',
       ReservationStatus.paid => 'Odendi',
     };
@@ -38,8 +38,8 @@ abstract final class ReservationPresentationHelper {
       return null;
     }
     return switch (transportType) {
-      TransportType.bus => 'Otobus',
-      TransportType.flight => 'Ucak',
+      TransportType.bus => 'Otobüs',
+      TransportType.flight => 'Uçak',
     };
   }
 }

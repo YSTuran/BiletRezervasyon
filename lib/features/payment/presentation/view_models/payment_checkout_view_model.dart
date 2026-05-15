@@ -37,7 +37,7 @@ class PaymentCheckoutViewModel extends BaseViewModel {
       );
       _hasLoaded = true;
       if (_payment == null) {
-        _errorMessage = 'Odeme bilgisi bulunamadi.';
+        _errorMessage = 'Ödeme bilgisi bulunamadı.';
       }
       notifyListeners();
     } on PaymentActionException catch (error) {

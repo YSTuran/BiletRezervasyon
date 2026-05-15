@@ -68,8 +68,8 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
       }
 
       final message = result.succeeded
-          ? 'Odeme basariyla tamamlandi.'
-          : 'Odeme basarisiz oldu. Baska bir test karti deneyin.';
+          ? 'Ödeme başarıyla tamamlandı.'
+          : 'Ödeme başarısız oldu. Başka bir test kartı deneyin.';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -98,7 +98,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
 
     if (viewModel.errorMessage != null && payment == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Odeme')),
+        appBar: AppBar(title: const Text('Ödeme')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -110,12 +110,12 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
 
     if (payment == null) {
       return const Scaffold(
-        body: Center(child: Text('Odeme bilgisi bulunamadi.')),
+        body: Center(child: Text('Ödeme bilgisi bulunamadı.')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Odeme')),
+      appBar: AppBar(title: const Text('Ödeme')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -141,7 +141,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                           Text('Koltuk: ${payment.seatNumber}'),
                         if (payment.tripDepartureAt != null)
                           Text(
-                            'Kalkis: ${PaymentPresentationHelper.formatDateTime(payment.tripDepartureAt!)}',
+                            'Kalkış: ${PaymentPresentationHelper.formatDateTime(payment.tripDepartureAt!)}',
                           ),
                         Text(
                           'Tutar: ${PaymentPresentationHelper.formatPrice(payment.amountMinor)}',
@@ -151,7 +151,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                         ),
                         if (payment.paymentDeadlineAt != null)
                           Text(
-                            'Odeme Son Tarihi: ${PaymentPresentationHelper.formatDateTime(payment.paymentDeadlineAt!)}',
+                            'Ödeme Son Tarihi: ${PaymentPresentationHelper.formatDateTime(payment.paymentDeadlineAt!)}',
                           ),
                       ],
                     ),
@@ -286,7 +286,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text('Odemeyi Tamamla'),
+                                  : const Text('Ödemeyi Tamamla'),
                             ),
                           ),
                         ],

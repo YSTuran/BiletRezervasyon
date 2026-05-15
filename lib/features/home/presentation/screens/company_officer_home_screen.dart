@@ -98,12 +98,12 @@ class _CompanyOperationsHomeViewState
   ) {
     final title = company?.name ?? 'Firma bilgileri eksik';
     final subtitle = company == null
-        ? 'Sefer olusturabilmek icin firma adinizi ve ulasim turunu girmeniz gerekiyor.'
+        ? 'Sefer oluşturabilmek için firma adınızı ve ulaşım türünü girmeniz gerekiyor.'
         : company.status == ApprovalStatus.approved
-        ? 'Firma onayi tamamlandi. Operasyon panelinden aktif seferleri ve yolculari takip edebilirsiniz.'
+        ? 'Firma onayı tamamlandı. Operasyon panelinden aktif seferleri ve yolcuları takip edebilirsiniz.'
         : company.status == ApprovalStatus.pending
-        ? 'Firma kaydiniz admin onayinda. Onay tamamlanana kadar sefer olusturamazsiniz.'
-        : 'Firma kaydiniz reddedildi. Bilgileri duzenleyip tekrar gonderebilirsiniz.';
+        ? 'Firma kaydınız admin onayında. Onay tamamlanana kadar sefer oluşturamazsınız.'
+        : 'Firma kaydınız reddedildi. Bilgileri düzenleyip tekrar gönderebilirsiniz.';
 
     return Container(
       decoration: BoxDecoration(
@@ -341,7 +341,7 @@ class _CompanyOperationsHomeViewState
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Kalkis: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
+                    'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                     style: TextStyle(color: visualStyle.foregroundColor),
                   ),
                   Text(
@@ -366,7 +366,7 @@ class _CompanyOperationsHomeViewState
     List<PassengerManifestEntry> entries,
   ) {
     if (entries.isEmpty) {
-      return const Text('Aktif seferler icin gosterilecek yolcu bulunmuyor.');
+      return const Text('Aktif seferler için gösterilecek yolcu bulunmuyor.');
     }
 
     return Column(
@@ -399,7 +399,7 @@ class _CompanyOperationsHomeViewState
                     'Durum: ${ReservationPresentationHelper.statusLabel(entry.reservationStatus)}',
                   ),
                   Text(
-                    'Kalkis: ${TripPresentationHelper.formatDateTime(entry.departureAt)}',
+                    'Kalkış: ${TripPresentationHelper.formatDateTime(entry.departureAt)}',
                   ),
                   Text(entry.passengerEmail),
                 ],
@@ -413,8 +413,8 @@ class _CompanyOperationsHomeViewState
 
   Widget _buildActionPanel(BuildContext context) {
     return DashboardSectionCard(
-      title: 'Hizli Islem',
-      subtitle: 'Operasyon akisina hizli gecisler',
+      title: 'Hızlı İşlem',
+      subtitle: 'Operasyon akışına hızlı geçişler',
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
@@ -478,7 +478,7 @@ class _CompanyOperationsHomeViewState
             if (viewModel.errorMessage != null && dashboard == null) ...[
               const SizedBox(height: 16),
               DashboardSectionCard(
-                title: 'Panel Yuklenemedi',
+                title: 'Panel Yüklenemedi',
                 child: Text(viewModel.errorMessage!),
               ),
             ],
@@ -488,8 +488,8 @@ class _CompanyOperationsHomeViewState
               _buildMetrics(dashboard.stats),
               const SizedBox(height: 18),
               DashboardSectionCard(
-                title: 'Yaklasan ve Aktif Seferler',
-                subtitle: 'Doluluk ve biletlenen yolcu bilgisini anlik gorun.',
+                title: 'Yaklaşan ve Aktif Seferler',
+                subtitle: 'Doluluk ve biletlenen yolcu bilgisini anlık görün.',
                 trailing: TextButton(
                   onPressed: () {
                     Navigator.of(context).pushNamed(
@@ -499,7 +499,7 @@ class _CompanyOperationsHomeViewState
                       ),
                     );
                   },
-                  child: const Text('Tumunu Ac'),
+                  child: const Text('Tümünü Aç'),
                 ),
                 child: _buildUpcomingTripsSection(
                   context,
@@ -510,7 +510,7 @@ class _CompanyOperationsHomeViewState
               DashboardSectionCard(
                 title: 'Yolcu Listesi',
                 subtitle:
-                    'Onaylanmis ve odemesi tamamlanmis aktif yolcular gorunur.',
+                    'Onaylanmış ve ödemesi tamamlanmış aktif yolcular görünür.',
                 child: _buildPassengerManifest(
                   context,
                   dashboard.passengerManifest,

@@ -113,49 +113,49 @@ function mapPostgresError({error, createError, actionLabel}) {
   ) {
     return createError(
         "failed-precondition",
-        "PostgreSQL ayarlari eksik. PGHOST/PGDATABASE/PGUSER/PGPASSWORD secret degerlerini guncelleyin.",
+        "PostgreSQL ayarları eksik. PGHOST/PGDATABASE/PGUSER/PGPASSWORD secret değerlerini güncelleyin.",
     );
   }
 
   if (error.code === "EAI_AGAIN" || error.code === "ENOTFOUND") {
     return createError(
         "failed-precondition",
-        "PostgreSQL host cozumlenemedi. PGHOST degerini kontrol edin.",
+        "PostgreSQL host çözümlenemedi. PGHOST değerini kontrol edin.",
     );
   }
 
   if (error.code === "28P01") {
     return createError(
         "failed-precondition",
-        "PostgreSQL kimlik dogrulamasi basarisiz. PGUSER/PGPASSWORD degerlerini kontrol edin.",
+        "PostgreSQL kimlik doğrulaması başarısız. PGUSER/PGPASSWORD değerlerini kontrol edin.",
     );
   }
 
   if (error.code === "42P01") {
     return createError(
         "failed-precondition",
-        "PostgreSQL tablolari bulunamadi. companies, trips, trip_seats, reservations veya payments tablolarini kontrol edin.",
+        "PostgreSQL tabloları bulunamadı. companies, trips, trip_seats, reservations veya payments tablolarını kontrol edin.",
     );
   }
 
   if (error.code === "42703") {
     const columnMessage = typeof error.column === "string" && error.column.trim() ?
-      ` Eksik veya hatali kolon: ${error.column.trim()}.` :
+      ` Eksik veya hatalı kolon: ${error.column.trim()}.` :
       "";
     return createError(
         "failed-precondition",
-        `PostgreSQL kolon yapisi kodla eslesmiyor.${columnMessage} companies/trips/trip_seats/reservations/payments kolon isimlerini kontrol edin.`,
+        `PostgreSQL kolon yapısı kodla eşleşmiyor.${columnMessage} companies/trips/trip_seats/reservations/payments kolon isimlerini kontrol edin.`,
     );
   }
 
   if (error.code === "23503") {
     return createError(
         "failed-precondition",
-        "Iliskili kayit bulunamadi. app_users, companies, trips veya reservations baglantilarini kontrol edin.",
+        "İlişkili kayıt bulunamadı. app_users, companies, trips veya reservations bağlantılarını kontrol edin.",
     );
   }
 
-  return createError("internal", `${actionLabel} basarisiz oldu.`);
+  return createError("internal", `${actionLabel} başarısız oldu.`);
 }
 
 module.exports = {

@@ -91,20 +91,20 @@ class TripListViewModel extends BaseViewModel {
 
   String get title => switch (role) {
     UserRole.normalUser => 'Aktif Seferler',
-    UserRole.companyOfficer => 'Sirketime Ait Seferler',
-    UserRole.admin => 'Tum Seferler',
+    UserRole.companyOfficer => 'Şirketime Ait Seferler',
+    UserRole.admin => 'Tüm Seferler',
   };
 
   String get emptyMessage {
     if (_filter.hasActiveFilters) {
-      return 'Secili filtrelere uygun sefer bulunmuyor.';
+      return 'Seçili filtrelere uygun sefer bulunmuyor.';
     }
 
     return switch (role) {
       UserRole.normalUser =>
         'Yaklasan veya yolda olan gosterilecek sefer bulunmuyor.',
-      UserRole.companyOfficer => 'Sirketinize ait kayitli sefer bulunmuyor.',
-      UserRole.admin => 'Sistemde kayitli sefer bulunmuyor.',
+      UserRole.companyOfficer => 'Şirketinize ait kayıtlı sefer bulunmuyor.',
+      UserRole.admin => 'Sistemde kayıtlı sefer bulunmuyor.',
     };
   }
 

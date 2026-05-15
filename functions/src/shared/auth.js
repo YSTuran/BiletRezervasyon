@@ -1,8 +1,8 @@
 function fallbackFullName(email) {
-  const prefix = email.split("@")[0] || "kullanici";
+  const prefix = email.split("@")[0] || "kullanıcı";
   const normalized = prefix.replace(/[._-]+/g, " ").trim();
   if (!normalized) {
-    return "Yeni Kullanici";
+    return "Yeni Kullanıcı";
   }
 
   return normalized

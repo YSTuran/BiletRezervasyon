@@ -81,7 +81,7 @@ class _RegisterViewState extends State<_RegisterView> {
   String _roleLabel(UserRole role) {
     switch (role) {
       case UserRole.normalUser:
-        return 'Normal Kullanici';
+        return 'Normal Kullanıcı';
       case UserRole.companyOfficer:
         return 'Firma Gorevlisi';
       case UserRole.admin:
@@ -94,7 +94,7 @@ class _RegisterViewState extends State<_RegisterView> {
     final viewModel = context.watch<RegisterViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Kayit Ol')),
+      appBar: AppBar(title: const Text('Kayıt Ol')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -193,7 +193,7 @@ class _RegisterViewState extends State<_RegisterView> {
                           obscureText: viewModel.hidePassword,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
-                            labelText: 'Sifre',
+                            labelText: 'Şifre',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               onPressed: viewModel.togglePasswordVisibility,
@@ -206,10 +206,10 @@ class _RegisterViewState extends State<_RegisterView> {
                           ),
                           validator: (value) {
                             if ((value ?? '').isEmpty) {
-                              return 'Sifre zorunludur';
+                              return 'Şifre zorunludur';
                             }
                             if ((value ?? '').length < 6) {
-                              return 'Sifre en az 6 karakter olmalidir';
+                              return 'Şifre en az 6 karakter olmalıdır';
                             }
                             return null;
                           },
@@ -223,7 +223,7 @@ class _RegisterViewState extends State<_RegisterView> {
                             _register();
                           },
                           decoration: InputDecoration(
-                            labelText: 'Sifre Tekrar',
+                            labelText: 'Şifre Tekrar',
                             prefixIcon: const Icon(Icons.lock_reset_outlined),
                             suffixIcon: IconButton(
                               onPressed:
@@ -237,10 +237,10 @@ class _RegisterViewState extends State<_RegisterView> {
                           ),
                           validator: (value) {
                             if ((value ?? '').isEmpty) {
-                              return 'Sifre tekrari zorunludur';
+                              return 'Şifre tekrarı zorunludur';
                             }
                             if (value != _passwordController.text) {
-                              return 'Sifreler ayni olmali';
+                              return 'Şifreler aynı olmalı';
                             }
                             return null;
                           },
@@ -258,7 +258,7 @@ class _RegisterViewState extends State<_RegisterView> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Kayit Ol'),
+                                : const Text('Kayıt Ol'),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -268,7 +268,7 @@ class _RegisterViewState extends State<_RegisterView> {
                               : () {
                                   Navigator.of(context).pop();
                                 },
-                          child: const Text('Zaten hesabin var mi? Giris yap'),
+                          child: const Text('Zaten hesabın var mı? Giriş yap'),
                         ),
                       ],
                     ),

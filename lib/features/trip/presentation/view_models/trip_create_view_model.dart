@@ -25,7 +25,7 @@ class TripCreateViewModel extends BaseViewModel {
   String get blockedMessage =>
       _loadErrorMessage ??
       _repository.currentOfficerTripCreationBlockMessage ??
-      'Sefer olusturulamiyor.';
+      'Sefer oluşturulamıyor.';
 
   Future<void> load() async {
     if (isBusy || _hasLoaded) {
@@ -59,21 +59,21 @@ class TripCreateViewModel extends BaseViewModel {
     final normalizedDestination = destination.trim();
 
     if (normalizedOrigin.isEmpty || normalizedDestination.isEmpty) {
-      throw const TripFormException('Kalkis ve varis alanlari zorunludur.');
+      throw const TripFormException('Kalkış ve varış alanları zorunludur.');
     }
     if (normalizedOrigin.toLowerCase() == normalizedDestination.toLowerCase()) {
       throw const TripFormException(
-        'Kalkis ve varis noktasi farkli olmalidir.',
+        'Kalkış ve varış noktası farklı olmalıdır.',
       );
     }
     if (!departureAt.isBefore(arrivalAt)) {
       throw const TripFormException(
-        'Varis saati kalkis saatinden sonra olmalidir.',
+        'Varış saati kalkış saatinden sonra olmalıdır.',
       );
     }
     if (seatCapacity <= 0) {
       throw const TripFormException(
-        'Koltuk kapasitesi sifirdan buyuk olmalidir.',
+        'Koltuk kapasitesi sıfırdan büyük olmalıdır.',
       );
     }
     if (priceMinor <= 0) {
@@ -89,7 +89,7 @@ class TripCreateViewModel extends BaseViewModel {
       seatCapacity: seatCapacity,
     )) {
       throw const TripFormException(
-        'Koltuk kapasitesi secili ulasim turu icin gecerli degil.',
+        'Koltuk kapasitesi seçili ulaşım türü için geçerli değil.',
       );
     }
 

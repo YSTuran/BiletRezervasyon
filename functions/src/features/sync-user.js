@@ -11,7 +11,7 @@ async function syncUserCore({auth, data, createError}) {
   if (!resolvedAuth) {
     throw createError(
         "unauthenticated",
-        "Bu islem icin giris yapmalisiniz.",
+        "Bu işlem için giriş yapmalısınız.",
     );
   }
 
@@ -20,7 +20,7 @@ async function syncUserCore({auth, data, createError}) {
   if (typeof email !== "string" || !email.trim()) {
     throw createError(
         "failed-precondition",
-        "Kullanici e-postasi bulunamadi.",
+        "Kullanıcı e-postası bulunamadı.",
     );
   }
 
@@ -28,7 +28,7 @@ async function syncUserCore({auth, data, createError}) {
   const fullName = resolveFullName(data?.fullName, normalizedEmail);
 
   return withClient(
-      {createError, actionLabel: "Kullanici senkronizasyonu"},
+      {createError, actionLabel: "Kullanıcı senkronizasyonu"},
       async (client) => {
         const existingUserResult = await client.query(
             `
@@ -83,7 +83,7 @@ async function deleteMyAccountCore({auth, data, createError}) {
   if (!resolvedAuth) {
     throw createError(
         "unauthenticated",
-        "Bu islem icin giris yapmalisiniz.",
+        "Bu işlem için giriş yapmalısınız.",
     );
   }
 
@@ -92,13 +92,26 @@ async function deleteMyAccountCore({auth, data, createError}) {
   await withClient(
       {createError, actionLabel: "Hesap silme"},
       async (client) => {
+        const userResult = await client.query(
+            `
+              SELECT role
+              FROM app_users
+              WHERE firebase_uid = $1
+              LIMIT 1
+            `,
+            [firebaseUid],
+        );
+        if (userResult.rows[0]?.role === "admin") {
+          throw createError("permission-denied", "Admin hesabı silinemez.");
+        }
+
         await client.query(
             `
               UPDATE app_users
               SET
                 firebase_uid = CONCAT('deleted:', firebase_uid, ':', id::text),
                 email = CONCAT('deleted-', id::text, '@deleted.local'),
-                full_name = 'Silinmis Kullanici',
+                full_name = 'Silinmiş Kullanıcı',
                 updated_at = now()
               WHERE firebase_uid = $1
             `,
@@ -113,7 +126,7 @@ async function deleteMyAccountCore({auth, data, createError}) {
     if (error?.code !== "auth/user-not-found") {
       throw createError(
           "internal",
-          "Firebase hesabi silinemedi. Lutfen daha sonra tekrar deneyin.",
+          "Firebase hesabı silinemedi. Lütfen daha sonra tekrar deneyin.",
       );
     }
   }

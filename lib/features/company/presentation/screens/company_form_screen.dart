@@ -103,7 +103,7 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Firma yetkilileri firma adini ve tek ulasim turunu tanimlar. Kayit sonrasi admin onayi gerekir.',
+                          'Firma yetkilileri firma adını ve tek ulaşım türünü tanımlar. Kayıt sonrası admin onayı gerekir.',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         if (company != null) ...[
@@ -137,17 +137,17 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
                         DropdownButtonFormField<TransportType>(
                           initialValue: viewModel.transportType,
                           decoration: const InputDecoration(
-                            labelText: 'Ulasim Turu',
+                            labelText: 'Ulaşım Türü',
                             prefixIcon: Icon(Icons.alt_route),
                           ),
                           items: const [
                             DropdownMenuItem(
                               value: TransportType.bus,
-                              child: Text('Otobus'),
+                              child: Text('Otobüs'),
                             ),
                             DropdownMenuItem(
                               value: TransportType.flight,
-                              child: Text('Ucak'),
+                              child: Text('Uçak'),
                             ),
                           ],
                           onChanged: viewModel.isBusy

@@ -186,14 +186,14 @@ class _TripListViewState extends State<_TripListView> {
                       runSpacing: 8,
                       children: [
                         ChoiceChip(
-                          label: const Text('Tumu'),
+                          label: const Text('Tümü'),
                           selected: viewModel.transportFilter == null,
                           onSelected: (_) {
                             viewModel.updateTransportFilter(null);
                           },
                         ),
                         ChoiceChip(
-                          label: const Text('Otobus'),
+                          label: const Text('Otobüs'),
                           selected:
                               viewModel.transportFilter == TransportType.bus,
                           onSelected: (_) {
@@ -201,7 +201,7 @@ class _TripListViewState extends State<_TripListView> {
                           },
                         ),
                         ChoiceChip(
-                          label: const Text('Ucak'),
+                          label: const Text('Uçak'),
                           selected:
                               viewModel.transportFilter == TransportType.flight,
                           onSelected: (_) {
@@ -223,7 +223,7 @@ class _TripListViewState extends State<_TripListView> {
                           icon: const Icon(Icons.calendar_today_outlined),
                           label: Text(
                             viewModel.departureDateFilter == null
-                                ? 'Tarih Sec'
+                                ? 'Tarih Seç'
                                 : _formatDate(viewModel.departureDateFilter!),
                           ),
                         ),
@@ -359,11 +359,11 @@ class _TripListViewState extends State<_TripListView> {
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
-                        'Kalkis: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
+                        'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
-                        'Varis: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
+                        'Varış: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(

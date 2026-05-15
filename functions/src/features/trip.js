@@ -38,7 +38,7 @@ function assertAllowedSeatCapacity({
   if (!allowedCapacities.includes(seatCapacity)) {
     throw createError(
         "invalid-argument",
-        "Koltuk kapasitesi secili ulasim turu icin gecerli degil.",
+        "Koltuk kapasitesi seçili ulaşım türü için geçerli değil.",
     );
   }
 }
@@ -119,14 +119,14 @@ async function insertTripWithUniqueCode({
 
   throw createError(
       "aborted",
-      "Sefer kodu olusturulurken beklenmeyen bir cakisma olustu.",
+      "Sefer kodu oluşturulurken beklenmeyen bir çakışma oluştu.",
   );
 }
 
 async function listTripsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(
@@ -180,7 +180,7 @@ async function listTripsCore({auth, data, createError}) {
 async function getTripDetailCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const tripId = normalizeTrimmedString(data?.tripId);
@@ -226,7 +226,7 @@ async function getTripDetailCore({auth, data, createError}) {
 async function createTripCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const origin = normalizeTrimmedString(data?.origin);
@@ -234,13 +234,13 @@ async function createTripCore({auth, data, createError}) {
   if (!origin || !destination) {
     throw createError(
         "invalid-argument",
-        "Kalkis ve varis alanlari zorunludur.",
+        "Kalkış ve varış alanları zorunludur.",
     );
   }
   if (origin.toLowerCase() === destination.toLowerCase()) {
     throw createError(
         "invalid-argument",
-        "Kalkis ve varis noktasi farkli olmalidir.",
+        "Kalkış ve varış noktası farklı olmalıdır.",
     );
   }
 
@@ -249,7 +249,7 @@ async function createTripCore({auth, data, createError}) {
   if (departureAt.getTime() >= arrivalAt.getTime()) {
     throw createError(
         "invalid-argument",
-        "Varis saati kalkis saatinden sonra olmalidir.",
+        "Varış saati kalkış saatinden sonra olmalıdır.",
     );
   }
 
@@ -274,7 +274,7 @@ async function createTripCore({auth, data, createError}) {
   });
 
   return withClient(
-      {createError, actionLabel: "Sefer olusturma"},
+      {createError, actionLabel: "Sefer oluşturma"},
       async (client) => {
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
         assertAllowedRoles(appUser, ["company_officer"], createError);
@@ -297,7 +297,7 @@ async function createTripCore({auth, data, createError}) {
         if (company.status !== "approved") {
           throw createError(
               "failed-precondition",
-              "Firma bilgileri onaylanmadan sefer olusturulamaz.",
+              "Firma bilgileri onaylanmadan sefer oluşturulamaz.",
           );
         }
         if (company.transport_type !== requestedTransportType) {
@@ -365,7 +365,7 @@ async function createTripCore({auth, data, createError}) {
 async function reviewTripCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const tripId = normalizeTrimmedString(data?.tripId);
@@ -377,7 +377,7 @@ async function reviewTripCore({auth, data, createError}) {
   if (status !== "approved" && status !== "rejected") {
     throw createError(
         "invalid-argument",
-        "Admin yalnizca approved veya rejected karari verebilir.",
+        "Admin yalnızca approved veya rejected kararı verebilir.",
     );
   }
 

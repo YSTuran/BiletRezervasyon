@@ -19,15 +19,15 @@ class PaymentListViewModel extends BaseViewModel {
   String? get errorMessage => _errorMessage;
 
   String get title => switch (role) {
-    UserRole.normalUser => 'Odemelerim',
-    UserRole.companyOfficer => 'Odeme Kayitlari',
-    UserRole.admin => 'Tum Odemeler',
+    UserRole.normalUser => 'Ödemelerim',
+    UserRole.companyOfficer => 'Ödeme Kayıtları',
+    UserRole.admin => 'Tüm Ödemeler',
   };
 
   String get emptyMessage => switch (role) {
-    UserRole.normalUser => 'Henuz bir odeme kaydiniz bulunmuyor.',
-    UserRole.companyOfficer => 'Sirket seferleri icin odeme kaydi bulunmuyor.',
-    UserRole.admin => 'Gosterilecek odeme kaydi bulunmuyor.',
+    UserRole.normalUser => 'Henüz bir ödeme kaydınız bulunmuyor.',
+    UserRole.companyOfficer => 'Şirket seferleri için ödeme kaydı bulunmuyor.',
+    UserRole.admin => 'Gösterilecek ödeme kaydı bulunmuyor.',
   };
 
   bool canOpenCheckout(Payment payment) {

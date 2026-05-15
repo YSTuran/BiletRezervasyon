@@ -65,7 +65,7 @@ class UserSyncService {
     if (user == null) {
       throw FirebaseAuthException(
         code: 'user-not-signed-in',
-        message: 'Aktif kullanici bulunamadi.',
+        message: 'Aktif kullanıcı bulunamadı.',
       );
     }
 
@@ -102,7 +102,7 @@ class UserSyncService {
     if (parsedRole == null) {
       throw const UserSyncException(
         code: 'data-loss',
-        message: 'Sunucudan gecerli rol bilgisi donmedi.',
+        message: 'Sunucudan geçerli rol bilgisi dönmedi.',
       );
     }
     final syncedEmail = _nonEmptyOrFallback(
@@ -316,7 +316,7 @@ class UserSyncService {
       }
     }
 
-    return 'Yeni Kullanici';
+    return 'Yeni Kullanıcı';
   }
 
   static Map<String, dynamic> _toMap(dynamic value) {
@@ -339,16 +339,16 @@ class UserSyncService {
       case 'permission-denied':
         return 'Rol atama yetkiniz bulunmuyor.';
       case 'unauthenticated':
-        return 'Oturum dogrulanamadi.';
+        return 'Oturum doğrulanamadı.';
       case 'not-found':
-        return 'Kullanici senkron fonksiyonu bulunamadi.';
+        return 'Kullanıcı senkron fonksiyonu bulunamadı.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi.';
+        return 'Sunucuya ulaşılamadı.';
       case 'failed-precondition':
-        return 'Sunucu yapilandirmasi eksik veya hatali.';
+        return 'Sunucu yapılandırması eksik veya hatalı.';
       default:
-        return 'Kullanici senkronizasyonu tamamlanamadi.';
+        return 'Kullanıcı senkronizasyonu tamamlanamadı.';
     }
   }
 

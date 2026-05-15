@@ -18,7 +18,7 @@ const {
 async function getMyCompanyCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(
@@ -40,7 +40,7 @@ async function getMyCompanyCore({auth, data, createError}) {
 async function upsertCompanyProfileCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const name = normalizeTrimmedString(data?.name);
@@ -115,14 +115,14 @@ async function upsertCompanyProfileCore({auth, data, createError}) {
 async function listCompaniesCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const status = parseApprovalStatus(data?.status, createError);
   if (status === "rejected") {
     throw createError(
         "invalid-argument",
-        "Reddedilen firmalar bu ekran icin listelenmiyor.",
+        "Reddedilen firmalar bu ekran için listelenmiyor.",
     );
   }
 
@@ -157,7 +157,7 @@ async function listCompaniesCore({auth, data, createError}) {
 async function reviewCompanyCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const companyId = normalizeTrimmedString(data?.companyId);

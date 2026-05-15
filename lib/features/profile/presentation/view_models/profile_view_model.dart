@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../core/presentation/view_models/base_view_model.dart';
+import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
 
 class ProfileViewModel extends BaseViewModel {
@@ -14,9 +15,26 @@ class ProfileViewModel extends BaseViewModel {
   final String? userEmail;
   final Future<void> Function()? onLogout;
   final AuthRepository _authRepository;
+  UserRole? _role;
 
   String get email => _authRepository.resolveEmail(preferredEmail: userEmail);
   String get fullName => _authRepository.resolveFullName();
+  bool get canDeleteAccount => _role != null && _role != UserRole.admin;
+
+  Future<void> load() async {
+    if (isBusy) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      _role = await _authRepository.resolveCurrentUserRole();
+    } catch (_) {
+      _role = null;
+    } finally {
+      setBusy(false);
+    }
+  }
 
   Future<void> updateFullName(String fullName) async {
     if (isBusy) {
@@ -79,9 +97,9 @@ class ProfileViewModel extends BaseViewModel {
       await _authRepository.signOut();
       return AppRoutes.login;
     } on FirebaseAuthException catch (error) {
-      throw UserMessageException('Cikis yapilamadi: ${error.code}');
+      throw UserMessageException('Çıkış yapılamadı: ${error.code}');
     } catch (_) {
-      throw const UserMessageException('Cikis yapilamadi.');
+      throw const UserMessageException('Çıkış yapılamadı.');
     } finally {
       setBusy(false);
     }

@@ -18,7 +18,7 @@ class TripCreateScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (arguments.role != UserRole.companyOfficer) {
       return const Scaffold(
-        body: Center(child: Text('Bu sayfa sadece firma gorevlileri icindir.')),
+        body: Center(child: Text('Bu sayfa sadece firma görevlileri içindir.')),
       );
     }
 
@@ -107,7 +107,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
     }
     if (_departureAt == null || _arrivalAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kalkis ve varis zamani secilmelidir.')),
+        const SnackBar(content: Text('Kalkış ve varış zamanı seçilmelidir.')),
       );
       return;
     }
@@ -117,7 +117,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
     final seatCapacity = _selectedSeatCapacity;
     if (seatCapacity == null || price == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kapasite ve fiyat gecerli olmalidir.')),
+        const SnackBar(content: Text('Kapasite ve fiyat geçerli olmalıdır.')),
       );
       return;
     }
@@ -138,7 +138,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer olusturuldu.')));
+      ).showSnackBar(const SnackBar(content: Text('Sefer oluşturuldu.')));
       Navigator.of(context).pop(trip.id);
     } on TripFormException catch (error) {
       if (!mounted) {
@@ -152,7 +152,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
 
   String _formatDateTime(DateTime? value) {
     if (value == null) {
-      return 'Secilmedi';
+      return 'Seçilmedi';
     }
     final day = '${value.day}'.padLeft(2, '0');
     final month = '${value.month}'.padLeft(2, '0');
@@ -232,18 +232,18 @@ class _TripCreateViewState extends State<_TripCreateView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Firma gorevlisi sefer olusturma',
+                        'Firma görevlisi sefer oluşturma',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Kayit edilen sefer admin onayina gonderilir.',
+                        'Kayıt edilen sefer admin onayına gönderilir.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 24),
                       InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Ulasim Turu',
+                          labelText: 'Ulaşım Türü',
                           prefixIcon: Icon(Icons.alt_route),
                         ),
                         child: Text(
@@ -259,12 +259,12 @@ class _TripCreateViewState extends State<_TripCreateView> {
                       TextFormField(
                         controller: _originController,
                         decoration: const InputDecoration(
-                          labelText: 'Kalkis',
+                          labelText: 'Kalkış',
                           prefixIcon: Icon(Icons.trip_origin),
                         ),
                         validator: (value) {
                           if ((value ?? '').trim().isEmpty) {
-                            return 'Kalkis noktasi zorunludur';
+                            return 'Kalkış noktası zorunludur';
                           }
                           return null;
                         },
@@ -273,12 +273,12 @@ class _TripCreateViewState extends State<_TripCreateView> {
                       TextFormField(
                         controller: _destinationController,
                         decoration: const InputDecoration(
-                          labelText: 'Varis',
+                          labelText: 'Varış',
                           prefixIcon: Icon(Icons.location_on_outlined),
                         ),
                         validator: (value) {
                           if ((value ?? '').trim().isEmpty) {
-                            return 'Varis noktasi zorunludur';
+                            return 'Varış noktası zorunludur';
                           }
                           return null;
                         },
@@ -291,7 +291,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                                 _pickDateTime(isDeparture: true);
                               },
                         icon: const Icon(Icons.event_outlined),
-                        label: Text('Kalkis: ${_formatDateTime(_departureAt)}'),
+                        label: Text('Kalkış: ${_formatDateTime(_departureAt)}'),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -301,7 +301,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                                 _pickDateTime(isDeparture: false);
                               },
                         icon: const Icon(Icons.schedule_outlined),
-                        label: Text('Varis: ${_formatDateTime(_arrivalAt)}'),
+                        label: Text('Varış: ${_formatDateTime(_arrivalAt)}'),
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<int>(

@@ -46,7 +46,7 @@ class _RoleHomeView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Aktif kullanici: ${viewModel.email}',
+                'Aktif kullanıcı: ${viewModel.email}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -87,7 +87,7 @@ class _RoleHomeView extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.credit_card_outlined),
-                label: const Text('Odemelerim'),
+                label: const Text('Ödemelerim'),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(

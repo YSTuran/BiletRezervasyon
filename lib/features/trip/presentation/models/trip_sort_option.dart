@@ -5,7 +5,7 @@ enum TripSortOption {
   durationAscending;
 
   String get label => switch (this) {
-    TripSortOption.departureAscending => 'En Erken Kalkis',
+    TripSortOption.departureAscending => 'En Erken Kalkış',
     TripSortOption.priceAscending => 'En Dusuk Fiyat',
     TripSortOption.priceDescending => 'En Yuksek Fiyat',
     TripSortOption.durationAscending => 'En Kisa Sure',

@@ -22,7 +22,7 @@ function evaluateRefundPolicy({
     return {
       isEligible: false,
       refundAmountMinor: 0,
-      refundSummary: "Kalkisa 1 saatten az kaldigi icin iade yapilamaz.",
+      refundSummary: "Kalkışa 1 saatten az kaldığı için iade yapılamaz.",
     };
   }
 
@@ -37,7 +37,7 @@ function evaluateRefundPolicy({
   return {
     isEligible: true,
     refundAmountMinor: Math.floor(amountMinor / 2),
-    refundSummary: "Yuzde 50 iade",
+    refundSummary: "Yüzde 50 iade",
   };
 }
 

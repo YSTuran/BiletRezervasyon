@@ -62,7 +62,7 @@ class MainApp extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                'Firebase bu platform icin ayarli degil. Android veya iOS hedefinde calistirin.',
+                'Firebase bu platform için ayarlı değil. Android veya iOS hedefinde çalıştırın.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -130,7 +130,7 @@ class MainApp extends StatelessWidget {
               if (arguments is! TripCreateArguments) {
                 return _buildRouteError(
                   settings,
-                  'Sefer olusturma ekrani acilamadi.',
+                  'Sefer oluşturma ekranı açılamadı.',
                 );
               }
               return MaterialPageRoute<void>(
@@ -152,7 +152,7 @@ class MainApp extends StatelessWidget {
             case AppRoutes.paymentList:
               final arguments = settings.arguments;
               if (arguments is! PaymentListArguments) {
-                return _buildRouteError(settings, 'Odeme listesi acilamadi.');
+                return _buildRouteError(settings, 'Ödeme listesi açılamadı.');
               }
               return MaterialPageRoute<void>(
                 settings: settings,
@@ -161,7 +161,7 @@ class MainApp extends StatelessWidget {
             case AppRoutes.paymentCheckout:
               final arguments = settings.arguments;
               if (arguments is! PaymentCheckoutArguments) {
-                return _buildRouteError(settings, 'Odeme ekrani acilamadi.');
+                return _buildRouteError(settings, 'Ödeme ekranı açılamadı.');
               }
               return MaterialPageRoute<void>(
                 settings: settings,

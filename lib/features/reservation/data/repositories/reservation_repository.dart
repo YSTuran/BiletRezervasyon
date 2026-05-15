@@ -57,7 +57,7 @@ class ReservationRepository {
 
       final reservation = _parseReservation(response['reservation']);
       if (reservation == null) {
-        throw const ReservationActionException('Rezervasyon olusturulamadi.');
+        throw const ReservationActionException('Rezervasyon oluşturulamadı.');
       }
       return reservation;
     } on FirebaseFunctionsException catch (error) {
@@ -151,24 +151,24 @@ class ReservationRepository {
       case 'already-exists':
         return trimmedMessage.isNotEmpty
             ? trimmedMessage
-            : 'Bu koltuk icin aktif rezervasyon zaten bulunuyor.';
+            : 'Bu koltuk için aktif rezervasyon zaten bulunuyor.';
       case 'permission-denied':
-        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+        return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       case 'failed-precondition':
       case 'invalid-argument':
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Rezervasyon islemi tamamlanamadi.';
+        return 'Rezervasyon işlemi tamamlanamadı.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Rezervasyon islemi tamamlanamadi.';
+        return 'Rezervasyon işlemi tamamlanamadı.';
     }
   }
 }

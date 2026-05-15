@@ -26,14 +26,14 @@ class TripRepository {
   String? get currentOfficerTripCreationBlockMessage {
     final company = currentOfficerCompany;
     if (company == null) {
-      return 'Sefer olusturmak icin once firma bilgilerinizi doldurmalisiniz.';
+      return 'Sefer oluşturmak için önce firma bilgilerinizi doldurmalısınız.';
     }
 
     return switch (company.status) {
       ApprovalStatus.pending =>
-        'Firma bilgileriniz admin onayi bekledigi icin henuz sefer olusturamazsiniz.',
+        'Firma bilgileriniz admin onayı beklediği için henüz sefer oluşturamazsınız.',
       ApprovalStatus.rejected =>
-        'Firma bilgileriniz reddedildigi icin once duzenleyip tekrar gondermelisiniz.',
+        'Firma bilgileriniz reddedildiği için önce düzenleyip tekrar göndermelisiniz.',
       ApprovalStatus.approved => null,
     };
   }
@@ -100,17 +100,17 @@ class TripRepository {
     final company = currentOfficerCompany;
     if (company == null) {
       throw const TripActionException(
-        'Firma bilgisi bulunamadigi icin sefer olusturulamadi.',
+        'Firma bilgisi bulunamadığı için sefer oluşturulamadı.',
       );
     }
     if (company.status != ApprovalStatus.approved) {
       throw const TripActionException(
-        'Firma bilgileri onaylanmadan sefer olusturulamaz.',
+        'Firma bilgileri onaylanmadan sefer oluşturulamaz.',
       );
     }
     if (transportType != company.transportType) {
       throw const TripActionException(
-        'Firma sadece tek bir ulasim tipi icin sefer acabilir.',
+        'Firma sadece tek bir ulaşım tipi için sefer açabilir.',
       );
     }
 
@@ -130,7 +130,7 @@ class TripRepository {
 
       final trip = _parseTrip(response['trip']);
       if (trip == null) {
-        throw const TripActionException('Sefer olusturulamadi.');
+        throw const TripActionException('Sefer oluşturulamadı.');
       }
 
       _seatCache[trip.id] = _parseSeats(response['seats']);
@@ -215,22 +215,22 @@ class TripRepository {
       case 'not-found':
         return 'Sefer bulunamadi.';
       case 'permission-denied':
-        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+        return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       case 'failed-precondition':
       case 'invalid-argument':
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sefer islemi tamamlanamadi.';
+        return 'Sefer işlemi tamamlanamadı.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Sefer islemi tamamlanamadi.';
+        return 'Sefer işlemi tamamlanamadı.';
     }
   }
 }

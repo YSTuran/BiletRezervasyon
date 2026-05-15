@@ -52,7 +52,7 @@ class _PaymentListView extends StatelessWidget {
             );
 
             return AlertDialog(
-              title: const Text('Iade Talebi'),
+              title: const Text('İade Talebi'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +65,7 @@ class _PaymentListView extends StatelessWidget {
                   if (refundAmountMinor != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Iade Tutari: ${PaymentPresentationHelper.formatPrice(refundAmountMinor)}',
+                      'İade Tutarı: ${PaymentPresentationHelper.formatPrice(refundAmountMinor)}',
                     ),
                   ],
                 ],
@@ -81,7 +81,7 @@ class _PaymentListView extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(dialogContext).pop(true);
                   },
-                  child: const Text('Iadeyi Tamamla'),
+                  child: const Text('İadeyi Tamamla'),
                 ),
               ],
             );
@@ -105,7 +105,7 @@ class _PaymentListView extends StatelessWidget {
       }
 
       final message =
-          'Iade tamamlandi. ${result.refundSummary}: '
+          'İade tamamlandı. ${result.refundSummary}: '
           '${PaymentPresentationHelper.formatPrice(result.refundAmountMinor)}';
       ScaffoldMessenger.of(
         context,
@@ -198,17 +198,17 @@ class _PaymentListView extends StatelessWidget {
                       Text('Sefer Kodu: ${payment.tripCode}'),
                     if (payment.seatNumber != null)
                       Text('Koltuk: ${payment.seatNumber}'),
-                    if (departureLabel != null) Text('Kalkis: $departureLabel'),
+                    if (departureLabel != null) Text('Kalkış: $departureLabel'),
                     Text(
                       'Tutar: ${PaymentPresentationHelper.formatPrice(payment.amountMinor)}',
                     ),
                     if (payment.paymentDeadlineAt != null)
                       Text(
-                        'Odeme Son Tarihi: ${PaymentPresentationHelper.formatDateTime(payment.paymentDeadlineAt!)}',
+                        'Ödeme Son Tarihi: ${PaymentPresentationHelper.formatDateTime(payment.paymentDeadlineAt!)}',
                       ),
                     if (payment.paidAt != null)
                       Text(
-                        'Odeme Zamani: ${PaymentPresentationHelper.formatDateTime(payment.paidAt!)}',
+                        'Ödeme Zamanı: ${PaymentPresentationHelper.formatDateTime(payment.paidAt!)}',
                       ),
                     if (payment.reservationCancelledAt != null)
                       Text(
@@ -219,7 +219,7 @@ class _PaymentListView extends StatelessWidget {
                     if (payment.refundAmountMinor != null) ...[
                       const SizedBox(height: 8),
                       Text(
-                        'Iade Tutari: ${PaymentPresentationHelper.formatPrice(payment.refundAmountMinor!)}',
+                        'İade Tutarı: ${PaymentPresentationHelper.formatPrice(payment.refundAmountMinor!)}',
                       ),
                     ],
                     if (PaymentPresentationHelper.refundSummaryLabel(payment) !=
@@ -227,7 +227,7 @@ class _PaymentListView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          'Iade Kurali: ${PaymentPresentationHelper.refundSummaryLabel(payment)!}',
+                          'İade Kuralı: ${PaymentPresentationHelper.refundSummaryLabel(payment)!}',
                         ),
                       ),
                     if (viewModel.canOpenCheckout(payment)) ...[
@@ -242,7 +242,7 @@ class _PaymentListView extends StatelessWidget {
                         label: Text(
                           payment.status == PaymentStatus.failed
                               ? 'Tekrar Ode'
-                              : 'Odeme Yap',
+                              : 'Ödeme Yap',
                         ),
                       ),
                     ],
@@ -255,7 +255,7 @@ class _PaymentListView extends StatelessWidget {
                                 _requestRefund(context, payment);
                               },
                         icon: const Icon(Icons.assignment_return_outlined),
-                        label: const Text('Iade Talep Et'),
+                        label: const Text('İade Talep Et'),
                       ),
                     ],
                   ],

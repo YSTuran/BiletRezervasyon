@@ -17,28 +17,19 @@ class AdminDashboard {
 
   factory AdminDashboard.fromJson(Map<String, dynamic> json) {
     return AdminDashboard(
-      summary: AdminDashboardSummary.fromJson(
-        json['summary'] as Map<String, dynamic>? ?? const {},
-      ),
-      pendingCompanies:
-          (json['pending_companies'] as List<dynamic>? ?? const [])
-              .whereType<Map<String, dynamic>>()
-              .map(PendingCompanyPreview.fromJson)
-              .toList(),
-      pendingTrips: (json['pending_trips'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(PendingTripPreview.fromJson)
-          .toList(),
-      pendingReservations:
-          (json['pending_reservations'] as List<dynamic>? ?? const [])
-              .whereType<Map<String, dynamic>>()
-              .map(PendingReservationPreview.fromJson)
-              .toList(),
-      rejectionReasons:
-          (json['rejection_reasons'] as List<dynamic>? ?? const [])
-              .whereType<Map<String, dynamic>>()
-              .map(DashboardRejectionReason.fromJson)
-              .toList(),
+      summary: AdminDashboardSummary.fromJson(_readMap(json['summary'])),
+      pendingCompanies: _readMapList(
+        json['pending_companies'],
+      ).map(PendingCompanyPreview.fromJson).toList(),
+      pendingTrips: _readMapList(
+        json['pending_trips'],
+      ).map(PendingTripPreview.fromJson).toList(),
+      pendingReservations: _readMapList(
+        json['pending_reservations'],
+      ).map(PendingReservationPreview.fromJson).toList(),
+      rejectionReasons: _readMapList(
+        json['rejection_reasons'],
+      ).map(DashboardRejectionReason.fromJson).toList(),
     );
   }
 }
@@ -62,12 +53,12 @@ class AdminDashboardSummary {
 
   factory AdminDashboardSummary.fromJson(Map<String, dynamic> json) {
     return AdminDashboardSummary(
-      pendingCompanyCount: json['pending_company_count'] as int? ?? 0,
-      pendingTripCount: json['pending_trip_count'] as int? ?? 0,
-      pendingReservationCount: json['pending_reservation_count'] as int? ?? 0,
-      paidReservationCount: json['paid_reservation_count'] as int? ?? 0,
-      paidPaymentCount: json['paid_payment_count'] as int? ?? 0,
-      totalSalesMinor: json['total_sales_minor'] as int? ?? 0,
+      pendingCompanyCount: _readInt(json['pending_company_count']),
+      pendingTripCount: _readInt(json['pending_trip_count']),
+      pendingReservationCount: _readInt(json['pending_reservation_count']),
+      paidReservationCount: _readInt(json['paid_reservation_count']),
+      paidPaymentCount: _readInt(json['paid_payment_count']),
+      totalSalesMinor: _readInt(json['total_sales_minor']),
     );
   }
 }
@@ -91,12 +82,12 @@ class PendingCompanyPreview {
 
   factory PendingCompanyPreview.fromJson(Map<String, dynamic> json) {
     return PendingCompanyPreview(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      transportType: TransportType.fromValue(json['transport_type'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      officerName: json['officer_name'] as String? ?? '-',
-      officerEmail: json['officer_email'] as String? ?? '-',
+      id: _readString(json['id']),
+      name: _readString(json['name'], fallback: '-'),
+      transportType: _readTransportType(json['transport_type']),
+      createdAt: _readDate(json['created_at']),
+      officerName: _readString(json['officer_name'], fallback: '-'),
+      officerEmail: _readString(json['officer_email'], fallback: '-'),
     );
   }
 }
@@ -124,14 +115,14 @@ class PendingTripPreview {
 
   factory PendingTripPreview.fromJson(Map<String, dynamic> json) {
     return PendingTripPreview(
-      id: json['id'] as String,
-      tripCode: json['trip_code'] as String,
-      origin: json['origin'] as String,
-      destination: json['destination'] as String,
-      departureAt: DateTime.parse(json['departure_at'] as String),
-      arrivalAt: DateTime.parse(json['arrival_at'] as String),
-      transportType: TransportType.fromValue(json['transport_type'] as String),
-      companyName: json['company_name'] as String? ?? '-',
+      id: _readString(json['id']),
+      tripCode: _readString(json['trip_code'], fallback: '-'),
+      origin: _readString(json['origin'], fallback: '-'),
+      destination: _readString(json['destination'], fallback: '-'),
+      departureAt: _readDate(json['departure_at']),
+      arrivalAt: _readDate(json['arrival_at']),
+      transportType: _readTransportType(json['transport_type']),
+      companyName: _readString(json['company_name'], fallback: '-'),
     );
   }
 }
@@ -159,14 +150,14 @@ class PendingReservationPreview {
 
   factory PendingReservationPreview.fromJson(Map<String, dynamic> json) {
     return PendingReservationPreview(
-      id: json['id'] as String,
-      tripId: json['trip_id'] as String,
-      tripCode: json['trip_code'] as String,
-      origin: json['origin'] as String,
-      destination: json['destination'] as String,
-      seatNumber: json['seat_number'] as String,
-      companyName: json['company_name'] as String? ?? '-',
-      requestedAt: DateTime.parse(json['requested_at'] as String),
+      id: _readString(json['id']),
+      tripId: _readString(json['trip_id']),
+      tripCode: _readString(json['trip_code'], fallback: '-'),
+      origin: _readString(json['origin'], fallback: '-'),
+      destination: _readString(json['destination'], fallback: '-'),
+      seatNumber: _readString(json['seat_number'], fallback: '-'),
+      companyName: _readString(json['company_name'], fallback: '-'),
+      requestedAt: _readDate(json['requested_at']),
     );
   }
 }
@@ -186,10 +177,61 @@ class DashboardRejectionReason {
 
   factory DashboardRejectionReason.fromJson(Map<String, dynamic> json) {
     return DashboardRejectionReason(
-      category: json['category'] as String? ?? '-',
-      subject: json['subject'] as String? ?? '-',
-      reason: json['reason'] as String? ?? '-',
-      occurredAt: DateTime.parse(json['occurred_at'] as String),
+      category: _readString(json['category'], fallback: '-'),
+      subject: _readString(json['subject'], fallback: '-'),
+      reason: _readString(json['reason'], fallback: '-'),
+      occurredAt: _readDate(json['occurred_at']),
     );
+  }
+}
+
+Map<String, dynamic> _readMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((key, data) => MapEntry('$key', data));
+  }
+  return const {};
+}
+
+Iterable<Map<String, dynamic>> _readMapList(dynamic value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value.map(_readMap).where((item) => item.isNotEmpty);
+}
+
+String _readString(dynamic value, {String fallback = ''}) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? fallback : text;
+}
+
+int _readInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  if (value is String) {
+    return num.tryParse(value)?.toInt() ?? 0;
+  }
+  return 0;
+}
+
+DateTime _readDate(dynamic value) {
+  if (value is DateTime) {
+    return value;
+  }
+  final text = value?.toString().trim() ?? '';
+  return DateTime.tryParse(text) ?? DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+TransportType _readTransportType(dynamic value) {
+  try {
+    return TransportType.fromValue(_readString(value));
+  } catch (_) {
+    return TransportType.bus;
   }
 }

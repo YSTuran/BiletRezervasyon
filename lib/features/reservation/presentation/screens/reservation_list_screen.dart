@@ -239,13 +239,13 @@ class _ReservationListView extends StatelessWidget {
                       Text('Sefer Kodu: ${reservation.tripCode}'),
                     if (reservation.seatNumber != null)
                       Text('Koltuk: ${reservation.seatNumber}'),
-                    if (departureLabel != null) Text('Kalkis: $departureLabel'),
+                    if (departureLabel != null) Text('Kalkış: $departureLabel'),
                     Text(
                       'Talep Zamani: ${ReservationPresentationHelper.formatDateTime(reservation.requestedAt)}',
                     ),
                     if (paymentDeadline != null)
                       Text(
-                        'Odeme Son Tarihi: ${ReservationPresentationHelper.formatDateTime(paymentDeadline)}',
+                        'Ödeme Son Tarihi: ${ReservationPresentationHelper.formatDateTime(paymentDeadline)}',
                       ),
                     if ((reservation.companyName ?? '').trim().isNotEmpty)
                       Text('Firma: ${reservation.companyName}'),
@@ -292,7 +292,7 @@ class _ReservationListView extends StatelessWidget {
                                         _openPayment(context, reservation);
                                       },
                                 icon: const Icon(Icons.payments_outlined),
-                                label: const Text('Odeme Yap'),
+                                label: const Text('Ödeme Yap'),
                               ),
                             ),
                           ],

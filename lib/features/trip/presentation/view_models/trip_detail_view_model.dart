@@ -136,7 +136,7 @@ class TripDetailViewModel extends BaseViewModel {
   Future<Reservation?> createReservation({required String tripSeatId}) async {
     if (!canCreateReservation) {
       throw const TripReviewException(
-        'Bu sefer icin rezervasyon olusturulamaz.',
+        'Bu sefer için rezervasyon oluşturulamaz.',
       );
     }
     if (isBusy) {

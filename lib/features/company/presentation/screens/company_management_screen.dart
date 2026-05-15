@@ -207,7 +207,7 @@ class _CompanyManagementView extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Firma Yonetimi')),
+      appBar: AppBar(title: const Text('Firma Yönetimi')),
       body: Column(
         children: [
           Padding(

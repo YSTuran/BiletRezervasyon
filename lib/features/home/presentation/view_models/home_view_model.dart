@@ -9,23 +9,23 @@ class HomeViewModel {
   final AuthRepository _authRepository;
 
   String get appBarTitle => switch (role) {
-    UserRole.normalUser => 'Normal Kullanici Ana Sayfa',
+    UserRole.normalUser => 'Normal Kullanıcı Ana Sayfa',
     UserRole.companyOfficer => 'Firma Gorevlisi Ana Sayfa',
     UserRole.admin => 'Admin Ana Sayfa',
   };
 
   String get description => switch (role) {
     UserRole.normalUser =>
-      'Yaklasan ve yolda olan onayli seferleri inceleyebilir, filtreleyebilir ve rezervasyon olusturabilirsiniz.',
+      'Yaklaşan ve yolda olan onaylı seferleri inceleyebilir, filtreleyebilir ve rezervasyon oluşturabilirsiniz.',
     UserRole.companyOfficer =>
-      'Firma bilgilerinizi guncelleyip operasyon panelinden doluluk, yolcu ve sefer akislarini takip edebilirsiniz.',
+      'Firma bilgilerinizi güncelleyip operasyon panelinden doluluk, yolcu ve sefer akışlarını takip edebilirsiniz.',
     UserRole.admin =>
-      'Dashboard uzerinden bekleyen kayitlari, satis ozetlerini ve red nedenlerini yonetebilirsiniz.',
+      'Dashboard üzerinden bekleyen kayıtları, satış özetlerini ve red nedenlerini yönetebilirsiniz.',
   };
 
   String get tripButtonLabel => switch (role) {
-    UserRole.normalUser => 'Tum Seferleri Gor',
-    UserRole.companyOfficer => 'Sirket Seferlerini Yonet',
+    UserRole.normalUser => 'Tüm Seferleri Gör',
+    UserRole.companyOfficer => 'Şirket Seferlerini Yönet',
     UserRole.admin => 'Seferleri Incele',
   };
 

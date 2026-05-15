@@ -65,7 +65,7 @@ class CompanyRepository {
 
       final company = _parseCompany(response['company']);
       if (company == null) {
-        throw const CompanyActionException('Firma kaydi olusturulamadi.');
+        throw const CompanyActionException('Firma kaydı oluşturulamadı.');
       }
 
       _currentOfficerCompany = company;
@@ -170,22 +170,22 @@ class CompanyRepository {
       case 'not-found':
         return 'Firma kaydi bulunamadi.';
       case 'permission-denied':
-        return 'Bu islem icin yeterli yetkiniz bulunmuyor.';
+        return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':
       case 'deadline-exceeded':
-        return 'Sunucuya ulasilamadi. Lutfen daha sonra tekrar deneyin.';
+        return 'Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
       case 'failed-precondition':
       case 'invalid-argument':
       case 'internal':
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Firma islemi tamamlanamadi.';
+        return 'Firma işlemi tamamlanamadı.';
       default:
         if (trimmedMessage.isNotEmpty) {
           return trimmedMessage;
         }
-        return 'Firma islemi tamamlanamadi.';
+        return 'Firma işlemi tamamlanamadı.';
     }
   }
 }

@@ -74,7 +74,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Admin Dashboard',
+            'Admin Paneli',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.94),
               fontWeight: FontWeight.w700,
@@ -82,7 +82,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Onay, satis ve red akislari tek panelde',
+            'Onay, satış ve red akışları tek panelde',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w900,
@@ -90,7 +90,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Bekleyen firma, sefer ve rezervasyonlari hizli izleyebilir; toplam satis ve red nedenlerini tek bakista gorebilirsiniz.',
+            'Bekleyen firma, sefer ve rezervasyonları hızlı izleyebilir; toplam satış ve red nedenlerini tek bakışta görebilirsiniz.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.94),
               height: 1.4,
@@ -132,35 +132,35 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
         DashboardMetricCard(
           title: 'Bekleyen Firma',
           value: '${summary.pendingCompanyCount}',
-          subtitle: 'Onay sirasinda',
+          subtitle: 'Onay sırasında',
           icon: Icons.apartment_outlined,
           colors: const [Color(0xFF396AFc), Color(0xFF2948FF)],
         ),
         DashboardMetricCard(
           title: 'Bekleyen Sefer',
           value: '${summary.pendingTripCount}',
-          subtitle: 'Admin karari bekliyor',
+          subtitle: 'Admin kararı bekliyor',
           icon: Icons.route_outlined,
           colors: const [Color(0xFFFF9966), Color(0xFFFF5E62)],
         ),
         DashboardMetricCard(
           title: 'Bekleyen Rezervasyon',
           value: '${summary.pendingReservationCount}',
-          subtitle: 'Firma karari bekliyor',
+          subtitle: 'Firma kararı bekliyor',
           icon: Icons.pending_actions_outlined,
           colors: const [Color(0xFF654EA3), Color(0xFFEAafc8)],
         ),
         DashboardMetricCard(
-          title: 'Tamamlanan Odeme',
+          title: 'Tamamlanan Ödeme',
           value: '${summary.paidPaymentCount}',
-          subtitle: 'Basarili odeme adedi',
+          subtitle: 'Başarılı ödeme adedi',
           icon: Icons.payments_outlined,
           colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
         ),
         DashboardMetricCard(
-          title: 'Toplam Satis',
+          title: 'Toplam Satış',
           value: TripPresentationHelper.formatPrice(summary.totalSalesMinor),
-          subtitle: '${summary.paidReservationCount} odemeli rezervasyon',
+          subtitle: '${summary.paidReservationCount} ödemeli rezervasyon',
           icon: Icons.stacked_line_chart_outlined,
           colors: const [Color(0xFFF7971E), Color(0xFFFFD200)],
         ),
@@ -258,10 +258,10 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
                   Text('Kod: ${trip.tripCode}'),
                   Text('Firma: ${trip.companyName}'),
                   Text(
-                    'Tur: ${TripPresentationHelper.transportLabel(trip.transportType)}',
+                    'Tür: ${TripPresentationHelper.transportLabel(trip.transportType)}',
                   ),
                   Text(
-                    'Kalkis: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
+                    'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                   ),
                 ],
               ),
@@ -318,7 +318,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
 
   Widget _buildRejectionReasons(List<DashboardRejectionReason> items) {
     if (items.isEmpty) {
-      return const Text('Kayitli red nedeni bulunmuyor.');
+      return const Text('Kayıtlı red nedeni bulunmuyor.');
     }
 
     return Column(
@@ -354,8 +354,8 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
 
   Widget _buildActionPanel(BuildContext context) {
     return DashboardSectionCard(
-      title: 'Hizli Islem',
-      subtitle: 'Inceleme ekranlarina hizli gecis',
+      title: 'Hızlı İşlem',
+      subtitle: 'İnceleme ekranlarına hızlı geçiş',
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
@@ -365,7 +365,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               Navigator.of(context).pushNamed(AppRoutes.companyManagement);
             },
             icon: const Icon(Icons.apartment_outlined),
-            label: const Text('Firmalari Yonet'),
+            label: const Text('Firmaları Yönet'),
           ),
           FilledButton.tonalIcon(
             onPressed: () {
@@ -375,7 +375,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               );
             },
             icon: const Icon(Icons.route_outlined),
-            label: const Text('Tum Seferler'),
+            label: const Text('Tüm Seferler'),
           ),
           FilledButton.tonalIcon(
             onPressed: () {
@@ -411,7 +411,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      appBar: AppBar(title: const Text('Admin Dashboard')),
+      appBar: AppBar(title: const Text('Admin Paneli')),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
@@ -421,7 +421,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
             if (viewModel.errorMessage != null && dashboard == null) ...[
               const SizedBox(height: 16),
               DashboardSectionCard(
-                title: 'Panel Yuklenemedi',
+                title: 'Panel Yüklenemedi',
                 child: Text(viewModel.errorMessage!),
               ),
             ],
@@ -431,28 +431,28 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               const SizedBox(height: 18),
               DashboardSectionCard(
                 title: 'Bekleyen Firmalar',
-                subtitle: 'Ilk onay sirasindaki firma talepleri',
+                subtitle: 'İlk onay sırasındaki firma talepleri',
                 trailing: TextButton(
                   onPressed: () {
                     Navigator.of(
                       context,
                     ).pushNamed(AppRoutes.companyManagement);
                   },
-                  child: const Text('Yonet'),
+                  child: const Text('Yönet'),
                 ),
                 child: _buildPendingCompanies(dashboard.pendingCompanies),
               ),
               const SizedBox(height: 18),
               DashboardSectionCard(
                 title: 'Bekleyen Seferler',
-                subtitle: 'Admin karari bekleyen son sefer talepleri',
+                subtitle: 'Admin kararı bekleyen son sefer talepleri',
                 child: _buildPendingTrips(context, dashboard.pendingTrips),
               ),
               const SizedBox(height: 18),
               DashboardSectionCard(
-                title: 'Bekleyen Rezervasyon Ozetleri',
+                title: 'Bekleyen Rezervasyon Özetleri',
                 subtitle:
-                    'Firma islemini bekleyen son rezervasyon taleplerinin ozeti',
+                    'Firma işlemini bekleyen son rezervasyon taleplerinin özeti',
                 child: _buildPendingReservations(dashboard.pendingReservations),
               ),
               const SizedBox(height: 18),

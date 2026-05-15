@@ -25,7 +25,7 @@ const {
 async function listReservationsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   return withClient(
@@ -104,7 +104,7 @@ async function listReservationsCore({auth, data, createError}) {
 async function getTripReservationAvailabilityCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const tripId = normalizeTrimmedString(data?.tripId);
@@ -170,7 +170,7 @@ async function getTripReservationAvailabilityCore({auth, data, createError}) {
 async function createReservationCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const tripId = normalizeTrimmedString(data?.tripId);
@@ -183,7 +183,7 @@ async function createReservationCore({auth, data, createError}) {
   }
 
   return withClient(
-      {createError, actionLabel: "Rezervasyon olusturma"},
+      {createError, actionLabel: "Rezervasyon oluşturma"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -201,7 +201,7 @@ async function createReservationCore({auth, data, createError}) {
         if (new Date(trip.departure_at).getTime() <= Date.now()) {
           throw createError(
               "failed-precondition",
-              "Kalkisi gecmis seferler icin rezervasyon yapilamaz.",
+              "Kalkışı geçmiş seferler için rezervasyon yapılamaz.",
           );
         }
 
@@ -216,7 +216,7 @@ async function createReservationCore({auth, data, createError}) {
             [tripSeatId, tripId],
         );
         if (seatResult.rows.length === 0) {
-          throw createError("not-found", "Secilen koltuk bulunamadi.");
+          throw createError("not-found", "Seçilen koltuk bulunamadı.");
         }
 
         const existingReservation = await client.query(
@@ -233,7 +233,7 @@ async function createReservationCore({auth, data, createError}) {
         if (existingReservation.rows.length > 0) {
           throw createError(
               "failed-precondition",
-              "Bu sefer icin zaten aktif bir rezervasyonunuz bulunuyor.",
+              "Bu sefer için zaten aktif bir rezervasyonunuz bulunuyor.",
           );
         }
 
@@ -272,7 +272,7 @@ async function createReservationCore({auth, data, createError}) {
           if (error.code === "23505") {
             throw createError(
                 "already-exists",
-                "Secilen koltuk icin aktif bir rezervasyon bulunuyor.",
+                "Seçilen koltuk için aktif bir rezervasyon bulunuyor.",
             );
           }
           throw error;
@@ -295,7 +295,7 @@ async function createReservationCore({auth, data, createError}) {
 async function cancelReservationCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const reservationId = normalizeTrimmedString(data?.reservationId);
@@ -350,7 +350,7 @@ async function cancelReservationCore({auth, data, createError}) {
           if (cancellationResult.rowCount === 0) {
             throw createError(
                 "failed-precondition",
-                "Rezervasyon durumu degistigi icin iptal edilemedi.",
+                "Rezervasyon durumu değiştiği için iptal edilemedi.",
             );
           }
 
@@ -384,7 +384,7 @@ async function cancelReservationCore({auth, data, createError}) {
 async function reviewReservationCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
   if (!resolvedAuth) {
-    throw createError("unauthenticated", "Bu islem icin giris yapmalisiniz.");
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
   }
 
   const reservationId = normalizeTrimmedString(data?.reservationId);
@@ -423,7 +423,7 @@ async function reviewReservationCore({auth, data, createError}) {
         if (reservation.status !== "pending_approval") {
           throw createError(
               "failed-precondition",
-              "Yalnizca bekleyen rezervasyonlar isleme alinabilir.",
+              "Yalnızca bekleyen rezervasyonlar işleme alınabilir.",
           );
         }
 

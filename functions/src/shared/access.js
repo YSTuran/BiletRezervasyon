@@ -24,7 +24,7 @@ async function loadRequiredAppUser(client, resolvedAuth, createError) {
   if (result.rows.length === 0) {
     throw createError(
         "failed-precondition",
-        "app_users kaydi bulunamadi. Once kullanici senkronizasyonunu tamamlayin.",
+        "app_users kaydı bulunamadı. Önce kullanıcı senkronizasyonunu tamamlayın.",
     );
   }
 
@@ -35,7 +35,7 @@ function assertAllowedRoles(appUser, allowedRoles, createError) {
   if (!allowedRoles.includes(appUser.role)) {
     throw createError(
         "permission-denied",
-        "Bu islem icin yeterli yetkiniz bulunmuyor.",
+        "Bu işlem için yeterli yetkiniz bulunmuyor.",
     );
   }
 }

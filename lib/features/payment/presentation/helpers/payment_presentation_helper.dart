@@ -8,7 +8,7 @@ abstract final class PaymentPresentationHelper {
       PaymentStatus.pending => 'Bekliyor',
       PaymentStatus.paid => 'Odendi',
       PaymentStatus.failed => 'Basarisiz',
-      PaymentStatus.refunded => 'Iade Edildi',
+      PaymentStatus.refunded => 'İade Edildi',
     };
   }
 
@@ -40,8 +40,8 @@ abstract final class PaymentPresentationHelper {
       return null;
     }
     return switch (transportType) {
-      TransportType.bus => 'Otobus',
-      TransportType.flight => 'Ucak',
+      TransportType.bus => 'Otobüs',
+      TransportType.flight => 'Uçak',
     };
   }
 

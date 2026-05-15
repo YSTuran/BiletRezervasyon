@@ -3,8 +3,8 @@ import '../../../../models/enums.dart';
 abstract final class CompanyPresentationHelper {
   static String transportLabel(TransportType transportType) {
     return switch (transportType) {
-      TransportType.bus => 'Otobus',
-      TransportType.flight => 'Ucak',
+      TransportType.bus => 'Otobüs',
+      TransportType.flight => 'Uçak',
     };
   }
 

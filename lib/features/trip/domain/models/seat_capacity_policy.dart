@@ -14,8 +14,8 @@ abstract final class SeatCapacityPolicy {
 
   static String layoutLabelFor(TransportType transportType) {
     return switch (transportType) {
-      TransportType.bus => '2+1, son sira dortlu',
-      TransportType.flight => '3+3 kabin duzeni',
+      TransportType.bus => '2+1, son sıra dörtlü',
+      TransportType.flight => '3+3 kabin düzeni',
     };
   }
 
