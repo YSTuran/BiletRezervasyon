@@ -164,7 +164,7 @@ class _CompanyManagementView extends StatelessWidget {
                       'Durum: ${CompanyPresentationHelper.approvalLabel(company.status)}',
                     ),
                     Text(
-                      'Ulasim: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
+                      'Ulaşım: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
                     ),
                     Text('Yetkili ID: ${company.officerUserId}'),
                     if (viewModel.showsReviewActions) ...[

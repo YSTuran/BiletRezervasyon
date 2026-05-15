@@ -349,7 +349,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                             (value ?? '').trim().replaceAll(',', '.'),
                           );
                           if (parsed == null || parsed <= 0) {
-                            return 'Gecerli bir fiyat girin';
+                            return 'Geçerli bir fiyat girin';
                           }
                           return null;
                         },

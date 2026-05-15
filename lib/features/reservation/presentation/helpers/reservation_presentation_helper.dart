@@ -10,7 +10,7 @@ abstract final class ReservationPresentationHelper {
   static String statusLabel(ReservationStatus status) {
     return switch (status) {
       ReservationStatus.pendingApproval => 'Onay Bekliyor',
-      ReservationStatus.approved => 'Onaylandi',
+      ReservationStatus.approved => 'Onaylandı',
       ReservationStatus.rejected => 'Reddedildi',
       ReservationStatus.cancelledByUser => 'Kullanıcı İptal Etti',
       ReservationStatus.expired => 'Suresi Doldu',

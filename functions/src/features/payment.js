@@ -192,14 +192,14 @@ async function processFakePaymentCore({auth, data, createError}) {
     throw createError("invalid-argument", "Kart sahibi adi zorunludur.");
   }
   if (!/^\d{16}$/.test(cardNumber)) {
-    throw createError("invalid-argument", "Kart numarasi 16 haneli olmalidir.");
+    throw createError("invalid-argument", "Kart numarası 16 haneli olmalıdır.");
   }
   if (!/^\d{2}$/.test(expiryMonth)) {
-    throw createError("invalid-argument", "Ay bilgisi MM formatinda olmalidir.");
+    throw createError("invalid-argument", "Ay bilgisi MM formatında olmalıdır.");
   }
   const parsedMonth = Number.parseInt(expiryMonth, 10);
   if (parsedMonth < 1 || parsedMonth > 12) {
-    throw createError("invalid-argument", "Ay bilgisi 01-12 arasinda olmalidir.");
+    throw createError("invalid-argument", "Ay bilgisi 01-12 arasında olmalıdır.");
   }
   if (!/^\d{2,4}$/.test(expiryYear)) {
     throw createError("invalid-argument", "Yil bilgisi gecersiz.");
@@ -214,7 +214,7 @@ async function processFakePaymentCore({auth, data, createError}) {
     throw createError("invalid-argument", "Kart son kullanma tarihi gecmis.");
   }
   if (!/^\d{3,4}$/.test(cvv)) {
-    throw createError("invalid-argument", "CVV 3 veya 4 haneli olmalidir.");
+    throw createError("invalid-argument", "CVV 3 veya 4 haneli olmalıdır.");
   }
 
   return withClient(

@@ -39,9 +39,9 @@ abstract final class TripPresentationHelper {
   static String statusLabel(TripStatus status) {
     return switch (status) {
       TripStatus.pendingApproval => 'Onay Bekliyor',
-      TripStatus.approved => 'Onaylandi',
+      TripStatus.approved => 'Onaylandı',
       TripStatus.rejected => 'Reddedildi',
-      TripStatus.cancelled => 'Iptal Edildi',
+      TripStatus.cancelled => 'İptal Edildi',
     };
   }
 
@@ -111,7 +111,7 @@ abstract final class TripPresentationHelper {
       ),
       TripVisualState.upcoming => const TripVisualStyle(
         state: TripVisualState.upcoming,
-        label: 'Henuz Yola Cikmadi',
+        label: 'Henüz Yola Çıkmadı',
         backgroundColor: Color(0xFFE6F7EC),
         borderColor: Color(0xFF2D9E5E),
         foregroundColor: Color(0xFF0C5E31),
@@ -125,14 +125,14 @@ abstract final class TripPresentationHelper {
       ),
       TripVisualState.completed => const TripVisualStyle(
         state: TripVisualState.completed,
-        label: 'Vardi ve Tamamlandi',
+        label: 'Vardı ve Tamamlandı',
         backgroundColor: Color(0xFFFDE3E3),
         borderColor: Color(0xFFD94B4B),
         foregroundColor: Color(0xFF7E1E1E),
       ),
       TripVisualState.cancelledByCompany => const TripVisualStyle(
         state: TripVisualState.cancelledByCompany,
-        label: 'Firma Iptali',
+        label: 'Firma İptali',
         backgroundColor: Color(0xFFFCE4F2),
         borderColor: Color(0xFFE05C9D),
         foregroundColor: Color(0xFF8E285F),

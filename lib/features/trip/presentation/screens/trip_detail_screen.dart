@@ -199,7 +199,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
                   );
                 },
                 icon: const Icon(Icons.confirmation_number_outlined),
-                label: const Text('Rezervasyonlarima Git'),
+                label: const Text('Rezervasyonlarıma Git'),
               ),
             ],
           ),

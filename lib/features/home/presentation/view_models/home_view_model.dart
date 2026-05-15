@@ -10,7 +10,7 @@ class HomeViewModel {
 
   String get appBarTitle => switch (role) {
     UserRole.normalUser => 'Normal Kullanıcı Ana Sayfa',
-    UserRole.companyOfficer => 'Firma Gorevlisi Ana Sayfa',
+    UserRole.companyOfficer => 'Firma Görevlisi Ana Sayfa',
     UserRole.admin => 'Admin Ana Sayfa',
   };
 

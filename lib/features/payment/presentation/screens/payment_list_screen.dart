@@ -212,7 +212,7 @@ class _PaymentListView extends StatelessWidget {
                       ),
                     if (payment.reservationCancelledAt != null)
                       Text(
-                        'Iptal Zamani: ${PaymentPresentationHelper.formatDateTime(payment.reservationCancelledAt!)}',
+                        'İptal Zamanı: ${PaymentPresentationHelper.formatDateTime(payment.reservationCancelledAt!)}',
                       ),
                     if ((payment.companyName ?? '').trim().isNotEmpty)
                       Text('Firma: ${payment.companyName}'),

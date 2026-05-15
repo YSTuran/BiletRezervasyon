@@ -278,7 +278,7 @@ class _ReservationListView extends StatelessWidget {
                                         );
                                       },
                                 icon: const Icon(Icons.cancel_outlined),
-                                label: const Text('Iptal Et'),
+                                label: const Text('İptal Et'),
                               ),
                             ),
                           if (viewModel.canPay(reservation)) ...[

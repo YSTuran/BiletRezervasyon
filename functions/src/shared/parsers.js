@@ -10,7 +10,7 @@ function parseTransportType(value, createError) {
   if (normalized === "flight") {
     return "flight";
   }
-  throw createError("invalid-argument", "Ulasim turu bus veya flight olmalidir.");
+  throw createError("invalid-argument", "Ulaşım türü bus veya flight olmalıdır.");
 }
 
 function parseApprovalStatus(value, createError) {
@@ -26,7 +26,7 @@ function parseApprovalStatus(value, createError) {
   }
   throw createError(
       "invalid-argument",
-      "Firma durumu pending, approved veya rejected olmalidir.",
+      "Firma durumu pending, approved veya rejected olmalıdır.",
   );
 }
 
@@ -46,7 +46,7 @@ function parseTripStatus(value, createError) {
   }
   throw createError(
       "invalid-argument",
-      "Sefer durumu pending_approval, approved, rejected veya cancelled olmalidir.",
+      "Sefer durumu pending_approval, approved, rejected veya cancelled olmalıdır.",
   );
 }
 
@@ -72,7 +72,7 @@ function parseReservationStatus(value, createError) {
   }
   throw createError(
       "invalid-argument",
-      "Rezervasyon durumu pending_approval, approved, rejected, cancelled_by_user, expired veya paid olmalidir.",
+      "Rezervasyon durumu pending_approval, approved, rejected, cancelled_by_user, expired veya paid olmalıdır.",
   );
 }
 
@@ -91,7 +91,7 @@ function parseIsoDate(value, fieldName, createError) {
   }
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
-    throw createError("invalid-argument", `${fieldName} gecersiz.`);
+    throw createError("invalid-argument", `${fieldName} geçersiz.`);
   }
   return parsed;
 }
@@ -99,7 +99,7 @@ function parseIsoDate(value, fieldName, createError) {
 function parsePositiveInteger(value, fieldName, createError) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw createError("invalid-argument", `${fieldName} sifirdan buyuk olmalidir.`);
+    throw createError("invalid-argument", `${fieldName} sıfırdan büyük olmalıdır.`);
   }
   return parsed;
 }

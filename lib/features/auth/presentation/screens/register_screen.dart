@@ -83,7 +83,7 @@ class _RegisterViewState extends State<_RegisterView> {
       case UserRole.normalUser:
         return 'Normal Kullanıcı';
       case UserRole.companyOfficer:
-        return 'Firma Gorevlisi';
+        return 'Firma Görevlisi';
       case UserRole.admin:
         return 'Admin';
     }
@@ -136,7 +136,7 @@ class _RegisterViewState extends State<_RegisterView> {
                               return 'Ad soyad zorunludur';
                             }
                             if (fullName.length < 3) {
-                              return 'Ad soyad en az 3 karakter olmalidir';
+                              return 'Ad soyad en az 3 karakter olmalıdır';
                             }
                             return null;
                           },
@@ -156,7 +156,7 @@ class _RegisterViewState extends State<_RegisterView> {
                               return 'E-posta zorunludur';
                             }
                             if (!email.contains('@') || !email.contains('.')) {
-                              return 'Gecerli bir e-posta girin';
+                              return 'Geçerli bir e-posta girin';
                             }
                             return null;
                           },

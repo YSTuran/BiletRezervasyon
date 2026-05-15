@@ -17,6 +17,7 @@ import '../../../reservation/presentation/models/reservation_route_arguments.dar
 import '../../../trip/presentation/helpers/trip_presentation_helper.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
+import '../widgets/home_navigation_card.dart';
 
 class CompanyOfficerHomeScreen extends StatelessWidget {
   const CompanyOfficerHomeScreen({super.key});
@@ -164,7 +165,7 @@ class _CompanyOperationsHomeViewState
                 _InfoPill(
                   icon: Icons.alt_route_outlined,
                   label:
-                      'Ulasim: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
+                      'Ulaşım: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
                 ),
             ],
           ),
@@ -182,42 +183,6 @@ class _CompanyOperationsHomeViewState
               ),
             ),
           ],
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton.icon(
-                onPressed: _openCompanyForm,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF16324F),
-                ),
-                icon: const Icon(Icons.apartment_outlined),
-                label: Text(
-                  company == null
-                      ? 'Firma Bilgilerini Gir'
-                      : 'Firma Bilgilerini Duzenle',
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(
-                    AppRoutes.tripList,
-                    arguments: const TripListArguments(
-                      role: UserRole.companyOfficer,
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white70),
-                ),
-                icon: const Icon(Icons.route_outlined),
-                label: const Text('Seferlere Git'),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -229,23 +194,23 @@ class _CompanyOperationsHomeViewState
       runSpacing: 14,
       children: [
         DashboardMetricCard(
-          title: 'Doluluk Orani',
+          title: 'Doluluk Oranı',
           value: '%${stats.overallOccupancyRatePercent}',
-          subtitle: 'Aktif ve yaklasan seferler',
+          subtitle: 'Aktif ve yaklaşan seferler',
           icon: Icons.pie_chart_outline,
           colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
         ),
         DashboardMetricCard(
-          title: 'Yaklasan Sefer',
+          title: 'Yaklaşan Sefer',
           value: '${stats.upcomingTripCount}',
-          subtitle: 'Henuz kalkmamis sefer',
+          subtitle: 'Henüz kalkmamış sefer',
           icon: Icons.event_available_outlined,
           colors: const [Color(0xFF396AFc), Color(0xFF2948FF)],
         ),
         DashboardMetricCard(
           title: 'Yoldaki Sefer',
           value: '${stats.activeTripCount}',
-          subtitle: 'Su anda devam eden',
+          subtitle: 'Şu anda devam eden',
           icon: Icons.local_shipping_outlined,
           colors: const [Color(0xFFF7971E), Color(0xFFFFD200)],
         ),
@@ -257,9 +222,9 @@ class _CompanyOperationsHomeViewState
           colors: const [Color(0xFFFC5C7D), Color(0xFF6A82FB)],
         ),
         DashboardMetricCard(
-          title: 'Yolcu Sayisi',
+          title: 'Yolcu Sayısı',
           value: '${stats.passengerCount}',
-          subtitle: 'Listeye yansiyan aktif yolcu',
+          subtitle: 'Listeye yansıyan aktif yolcu',
           icon: Icons.groups_2_outlined,
           colors: const [Color(0xFF7F00FF), Color(0xFFE100FF)],
         ),
@@ -272,7 +237,7 @@ class _CompanyOperationsHomeViewState
     List<CompanyOperationsTripSnapshot> trips,
   ) {
     if (trips.isEmpty) {
-      return const Text('Yaklasan veya yolda olan onayli sefer bulunmuyor.');
+      return const Text('Yaklaşan veya yolda olan onaylı sefer bulunmuyor.');
     }
 
     return Column(
@@ -411,47 +376,68 @@ class _CompanyOperationsHomeViewState
     );
   }
 
-  Widget _buildActionPanel(BuildContext context) {
-    return DashboardSectionCard(
-      title: 'Hızlı İşlem',
-      subtitle: 'Operasyon akışına hızlı geçişler',
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(
-                AppRoutes.tripList,
-                arguments: const TripListArguments(
-                  role: UserRole.companyOfficer,
-                ),
-              );
-            },
-            icon: const Icon(Icons.route_outlined),
-            label: const Text('Seferlerim'),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(
-                AppRoutes.reservationList,
-                arguments: const ReservationListArguments(
-                  role: UserRole.companyOfficer,
-                ),
-              );
-            },
-            icon: const Icon(Icons.fact_check_outlined),
-            label: const Text('Rezervasyon Talepleri'),
-          ),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(AppRoutes.profile);
-            },
-            icon: const Icon(Icons.person_outline),
-            label: const Text('Profil'),
-          ),
-        ],
-      ),
+  Widget _buildActionPanel(BuildContext context, Company? company) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'İşlemler',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 12),
+        HomeNavigationGrid(
+          items: [
+            HomeNavigationItem(
+              icon: Icons.apartment_outlined,
+              title: company == null
+                  ? 'Firma Bilgilerini Gir'
+                  : 'Firma Bilgilerini Düzenle',
+              subtitle: 'Firma profilinizi ve ulaşım türünü yönetin',
+              colors: const [Color(0xFF396AFC), Color(0xFF20BDFF)],
+              onTap: _openCompanyForm,
+            ),
+            HomeNavigationItem(
+              icon: Icons.route_outlined,
+              title: 'Seferlerim',
+              subtitle: 'Şirketinize ait seferleri görüntüleyin',
+              colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.tripList,
+                  arguments: const TripListArguments(
+                    role: UserRole.companyOfficer,
+                  ),
+                );
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.fact_check_outlined,
+              title: 'Rezervasyon Talepleri',
+              subtitle: 'Bekleyen yolcu taleplerini inceleyin',
+              colors: const [Color(0xFFFF9966), Color(0xFFFF5E62)],
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.reservationList,
+                  arguments: const ReservationListArguments(
+                    role: UserRole.companyOfficer,
+                  ),
+                );
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.person_outline,
+              title: 'Profil',
+              subtitle: 'Hesap ve şifre ayarlarınızı yönetin',
+              colors: const [Color(0xFF1D4350), Color(0xFFA43931)],
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.profile);
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -490,17 +476,6 @@ class _CompanyOperationsHomeViewState
               DashboardSectionCard(
                 title: 'Yaklaşan ve Aktif Seferler',
                 subtitle: 'Doluluk ve biletlenen yolcu bilgisini anlık görün.',
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      AppRoutes.tripList,
-                      arguments: const TripListArguments(
-                        role: UserRole.companyOfficer,
-                      ),
-                    );
-                  },
-                  child: const Text('Tümünü Aç'),
-                ),
                 child: _buildUpcomingTripsSection(
                   context,
                   dashboard.upcomingTrips,
@@ -518,7 +493,7 @@ class _CompanyOperationsHomeViewState
               ),
               const SizedBox(height: 18),
             ],
-            _buildActionPanel(context),
+            _buildActionPanel(context, company),
           ],
         ),
       ),

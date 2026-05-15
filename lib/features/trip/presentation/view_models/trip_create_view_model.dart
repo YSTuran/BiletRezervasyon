@@ -77,7 +77,7 @@ class TripCreateViewModel extends BaseViewModel {
       );
     }
     if (priceMinor <= 0) {
-      throw const TripFormException('Fiyat sifirdan buyuk olmalidir.');
+      throw const TripFormException('Fiyat sıfırdan büyük olmalıdır.');
     }
 
     final selectedTransportType = transportType;

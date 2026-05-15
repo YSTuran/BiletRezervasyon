@@ -24,7 +24,7 @@ const {
 const {createTripCode, isTripCodeConflict} = require("./trip-code");
 
 const SEAT_CAPACITY_OPTIONS_BY_TRANSPORT = {
-  bus: [30, 33, 36, 39, 42],
+  bus: [31, 34, 37, 40, 43],
   flight: [150, 160, 170, 180, 190],
 };
 

@@ -216,7 +216,7 @@ class _StatusCard extends StatelessWidget {
             'Durum: ${CompanyPresentationHelper.approvalLabel(company.status)}',
           ),
           Text(
-            'Ulasim: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
+            'Ulaşım: ${CompanyPresentationHelper.transportLabel(company.transportType)}',
           ),
           if (rejectionReason.isNotEmpty) ...[
             const SizedBox(height: 8),

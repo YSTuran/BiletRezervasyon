@@ -19,13 +19,13 @@ class ReservationListViewModel extends BaseViewModel {
   String? get errorMessage => _errorMessage;
 
   String get title => switch (role) {
-    UserRole.normalUser => 'Rezervasyonlarim',
+    UserRole.normalUser => 'Rezervasyonlarım',
     UserRole.companyOfficer => 'Rezervasyon Talepleri',
     UserRole.admin => 'Tüm Rezervasyonlar',
   };
 
   String get emptyMessage => switch (role) {
-    UserRole.normalUser => 'Henuz bir rezervasyonunuz bulunmuyor.',
+    UserRole.normalUser => 'Henüz bir rezervasyonunuz bulunmuyor.',
     UserRole.companyOfficer =>
       'Şirket seferleri için henüz bir rezervasyon talebi bulunmuyor.',
     UserRole.admin => 'Gosterilecek rezervasyon bulunmuyor.',

@@ -11,7 +11,7 @@ abstract final class CompanyPresentationHelper {
   static String approvalLabel(ApprovalStatus status) {
     return switch (status) {
       ApprovalStatus.pending => 'Onay Bekliyor',
-      ApprovalStatus.approved => 'Onaylandi',
+      ApprovalStatus.approved => 'Onaylandı',
       ApprovalStatus.rejected => 'Reddedildi',
     };
   }

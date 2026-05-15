@@ -120,7 +120,7 @@ class _LoginViewState extends State<_LoginView> {
                               return 'E-posta zorunludur';
                             }
                             if (!email.contains('@') || !email.contains('.')) {
-                              return 'Gecerli bir e-posta girin';
+                              return 'Geçerli bir e-posta girin';
                             }
                             return null;
                           },

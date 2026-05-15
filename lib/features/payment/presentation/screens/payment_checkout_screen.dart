@@ -200,7 +200,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                               if (!RegExp(
                                 r'^\d{4} \d{4} \d{4} \d{4}$',
                               ).hasMatch((value ?? '').trim())) {
-                                return 'Kart numarasi XXXX XXXX XXXX XXXX formatinda olmalidir';
+                                return 'Kart numarası XXXX XXXX XXXX XXXX formatında olmalıdır';
                               }
                               return null;
                             },

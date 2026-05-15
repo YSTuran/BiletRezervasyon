@@ -25,7 +25,7 @@ const schemaColumnCache = new Map();
 function parsePort(value) {
   const parsedPort = Number.parseInt(value, 10);
   if (Number.isNaN(parsedPort)) {
-    throw new Error("PGPORT numeric olmalidir.");
+    throw new Error("PGPORT numeric olmalıdır.");
   }
   return parsedPort;
 }

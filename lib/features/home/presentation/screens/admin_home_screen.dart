@@ -14,6 +14,7 @@ import '../../../reservation/presentation/models/reservation_route_arguments.dar
 import '../../../trip/presentation/helpers/trip_presentation_helper.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
 import '../view_models/home_view_model.dart';
+import '../widgets/home_navigation_card.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -353,49 +354,65 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
   }
 
   Widget _buildActionPanel(BuildContext context) {
-    return DashboardSectionCard(
-      title: 'Hızlı İşlem',
-      subtitle: 'İnceleme ekranlarına hızlı geçiş',
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(AppRoutes.companyManagement);
-            },
-            icon: const Icon(Icons.apartment_outlined),
-            label: const Text('Firmaları Yönet'),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(
-                AppRoutes.tripList,
-                arguments: const TripListArguments(role: UserRole.admin),
-              );
-            },
-            icon: const Icon(Icons.route_outlined),
-            label: const Text('Tüm Seferler'),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(
-                AppRoutes.reservationList,
-                arguments: const ReservationListArguments(role: UserRole.admin),
-              );
-            },
-            icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('Rezervasyonlar'),
-          ),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed(AppRoutes.profile);
-            },
-            icon: const Icon(Icons.person_outline),
-            label: const Text('Profil'),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'İşlemler',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 12),
+        HomeNavigationGrid(
+          items: [
+            HomeNavigationItem(
+              icon: Icons.apartment_outlined,
+              title: 'Firmaları Yönet',
+              subtitle: 'Firma başvurularını inceleyin',
+              colors: const [Color(0xFF396AFC), Color(0xFF20BDFF)],
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.companyManagement);
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.route_outlined,
+              title: 'Tüm Seferler',
+              subtitle: 'Sefer onaylarını ve kayıtlarını görün',
+              colors: const [Color(0xFFFF9966), Color(0xFFFF5E62)],
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.tripList,
+                  arguments: const TripListArguments(role: UserRole.admin),
+                );
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.receipt_long_outlined,
+              title: 'Rezervasyonlar',
+              subtitle: 'Rezervasyon akışını takip edin',
+              colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.reservationList,
+                  arguments: const ReservationListArguments(
+                    role: UserRole.admin,
+                  ),
+                );
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.person_outline,
+              title: 'Profil',
+              subtitle: 'Hesap bilgilerinizi yönetin',
+              colors: const [Color(0xFF1D4350), Color(0xFFA43931)],
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.profile);
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -432,14 +449,6 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               DashboardSectionCard(
                 title: 'Bekleyen Firmalar',
                 subtitle: 'İlk onay sırasındaki firma talepleri',
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(AppRoutes.companyManagement);
-                  },
-                  child: const Text('Yönet'),
-                ),
                 child: _buildPendingCompanies(dashboard.pendingCompanies),
               ),
               const SizedBox(height: 18),
