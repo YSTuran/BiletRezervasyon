@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../../../../core/data/services/postgres_callable_service.dart';
+import '../../../../models/enums.dart';
 import '../../domain/models/payment.dart';
 
 class PaymentRepository {
@@ -66,11 +67,15 @@ class PaymentRepository {
 
   Future<RefundPaymentResult> requestRefund({
     required String reservationId,
+    String? reason,
   }) async {
     try {
       final response = await PostgresCallableService.call(
         functionName: 'requestRefund',
-        data: {'reservationId': reservationId},
+        data: {
+          'reservationId': reservationId,
+          if ((reason ?? '').trim().isNotEmpty) 'reason': reason!.trim(),
+        },
       );
 
       final payment = _parsePayment(response['payment']);
@@ -85,6 +90,27 @@ class PaymentRepository {
             (response['refundSummary'] as String?)?.trim() ??
             'İade işlemi tamamlandı.',
       );
+    } on FirebaseFunctionsException catch (error) {
+      throw PaymentActionException(_mapPaymentError(error.code, error.message));
+    }
+  }
+
+  Future<Payment?> reviewRefundRequest({
+    required String refundRequestId,
+    required RefundRequestStatus status,
+    String? rejectionReason,
+  }) async {
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'reviewRefundRequest',
+        data: {
+          'refundRequestId': refundRequestId,
+          'status': status.value,
+          if ((rejectionReason ?? '').trim().isNotEmpty)
+            'rejectionReason': rejectionReason!.trim(),
+        },
+      );
+      return _parsePayment(response['payment']);
     } on FirebaseFunctionsException catch (error) {
       throw PaymentActionException(_mapPaymentError(error.code, error.message));
     }

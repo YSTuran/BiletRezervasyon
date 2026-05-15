@@ -1,3 +1,5 @@
+const {randomUUID} = require("node:crypto");
+
 const {resolveAuthContext} = require("../shared/auth");
 const {withClient, withTransaction} = require("../shared/callable");
 const {
@@ -8,13 +10,17 @@ const {
   loadAccessibleReservationRow,
   loadRequiredAppUser,
 } = require("../shared/access");
-const {normalizeTrimmedString} = require("../shared/parsers");
+const {
+  normalizeTrimmedString,
+  parseRefundRequestStatus,
+} = require("../shared/parsers");
 const {serializePaymentRow} = require("../shared/serializers");
 const {
   buildPaymentSelectClause,
   quoteIdentifier,
   resolveTripTransportTypeColumn,
 } = require("../shared/postgres");
+const {createNotification} = require("../shared/notifications");
 const {evaluateRefundPolicy} = require("../shared/refund-policy");
 
 function serializePaymentForClient(row, actionAt = new Date()) {
@@ -41,7 +47,9 @@ function serializePaymentForClient(row, actionAt = new Date()) {
     canRequestRefund =
       row.status === "paid" &&
       row.reservation_status === "paid" &&
-      refundPolicy.isEligible;
+      refundPolicy.isEligible &&
+      row.refund_request_status !== "pending" &&
+      row.refund_request_status !== "approved";
   }
 
   return serializePaymentRow({
@@ -150,7 +158,7 @@ async function getReservationPaymentCore({auth, data, createError}) {
             createError,
         );
         if (!reservation) {
-          throw createError("not-found", "Rezervasyon bulunamadi.");
+          throw createError("not-found", "Rezervasyon bulunamadı.");
         }
 
         if (reservation.status === "approved") {
@@ -202,7 +210,7 @@ async function processFakePaymentCore({auth, data, createError}) {
     throw createError("invalid-argument", "Ay bilgisi 01-12 arasında olmalıdır.");
   }
   if (!/^\d{2,4}$/.test(expiryYear)) {
-    throw createError("invalid-argument", "Yil bilgisi gecersiz.");
+    throw createError("invalid-argument", "Yıl bilgisi geçersiz.");
   }
   const parsedYear = Number.parseInt(expiryYear, 10);
   const normalizedYear = expiryYear.length === 2 ? 2000 + parsedYear : parsedYear;
@@ -231,7 +239,7 @@ async function processFakePaymentCore({auth, data, createError}) {
             createError,
         );
         if (!reservation) {
-          throw createError("not-found", "Rezervasyon bulunamadi.");
+          throw createError("not-found", "Rezervasyon bulunamadı.");
         }
         if (reservation.status === "paid") {
           throw createError("failed-precondition", "Bu rezervasyon zaten odendi.");
@@ -330,9 +338,10 @@ async function requestRefundCore({auth, data, createError}) {
   if (!reservationId) {
     throw createError("invalid-argument", "reservationId zorunludur.");
   }
+  const reason = normalizeTrimmedString(data?.reason);
 
   return withClient(
-      {createError, actionLabel: "İade işlemi"},
+      {createError, actionLabel: "İade talebi"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -345,7 +354,7 @@ async function requestRefundCore({auth, data, createError}) {
             createError,
         );
         if (!reservation) {
-          throw createError("not-found", "Rezervasyon bulunamadi.");
+          throw createError("not-found", "Rezervasyon bulunamadı.");
         }
         if (reservation.status !== "paid") {
           throw createError(
@@ -387,42 +396,99 @@ async function requestRefundCore({auth, data, createError}) {
         }
 
         const updatedPayment = await withTransaction(client, async () => {
-          const paymentUpdateResult = await client.query(
+          const existingRequestResult = await client.query(
               `
-                UPDATE payments
-                SET
-                  status = 'refunded'::payment_status,
-                  updated_at = now()
-                WHERE id = $1
-                  AND status = 'paid'::payment_status
+                SELECT id, status
+                FROM refund_requests
+                WHERE payment_id = $1
+                ORDER BY created_at DESC
+                LIMIT 1
               `,
               [payment.id],
           );
-          if (paymentUpdateResult.rowCount === 0) {
+
+          if (existingRequestResult.rows[0]?.status === "pending") {
             throw createError(
                 "failed-precondition",
-                "Ödeme durumu değiştiği için iade tamamlanamadı.",
+                "Bu ödeme için bekleyen bir iade talebi zaten var.",
+            );
+          }
+          if (existingRequestResult.rows[0]?.status === "approved") {
+            throw createError(
+                "failed-precondition",
+                "Bu ödeme için iade zaten onaylanmış.",
             );
           }
 
-          const reservationUpdateResult = await client.query(
+          const companyResult = await client.query(
               `
-                UPDATE reservations
-                SET
-                  status = 'cancelled_by_user'::reservation_status,
-                  cancelled_at = now(),
-                  updated_at = now()
-                WHERE id = $1
-                  AND user_id = $2
-                  AND status = 'paid'::reservation_status
+                SELECT
+                  c.officer_user_id,
+                  t.trip_code,
+                  t.origin,
+                  t.destination,
+                  t.id AS trip_id
+                FROM reservations r
+                INNER JOIN trips t ON t.id = r.trip_id
+                INNER JOIN companies c ON c.id = t.company_id
+                WHERE r.id = $1
+                LIMIT 1
               `,
-              [reservationId, appUser.id],
+              [reservationId],
           );
-          if (reservationUpdateResult.rowCount === 0) {
-            throw createError(
-                "failed-precondition",
-                "Rezervasyon durumu değiştiği için iade tamamlanamadı.",
-            );
+          const companyRow = companyResult.rows[0];
+          const refundRequestId = randomUUID();
+          await client.query(
+              `
+                INSERT INTO refund_requests (
+                  id,
+                  reservation_id,
+                  payment_id,
+                  requested_by_user_id,
+                  status,
+                  reason,
+                  refund_amount_minor,
+                  refund_summary,
+                  requested_at,
+                  created_at,
+                  updated_at
+                )
+                VALUES (
+                  $1,
+                  $2,
+                  $3,
+                  $4,
+                  'pending'::refund_request_status,
+                  NULLIF($5, ''),
+                  $6,
+                  $7,
+                  now(),
+                  now(),
+                  now()
+                )
+              `,
+              [
+                refundRequestId,
+                reservationId,
+                payment.id,
+                appUser.id,
+                reason,
+                refundPolicy.refundAmountMinor,
+                refundPolicy.refundSummary,
+              ],
+          );
+
+          if (companyRow?.officer_user_id) {
+            await createNotification(client, {
+              userId: companyRow.officer_user_id,
+              title: "Yeni iade talebi",
+              body:
+                `${companyRow.trip_code} kodlu ${companyRow.origin} - ${companyRow.destination} seferi için bir iade talebi var.`,
+              category: "refund_requested",
+              relatedTripId: companyRow.trip_id,
+              relatedReservationId: reservationId,
+              relatedPaymentId: payment.id,
+            });
           }
 
           return loadAccessiblePaymentRowByReservationId(
@@ -436,7 +502,165 @@ async function requestRefundCore({auth, data, createError}) {
         return {
           payment: serializePaymentForClient(updatedPayment, actionAt),
           refundAmountMinor: refundPolicy.refundAmountMinor,
-          refundSummary: refundPolicy.refundSummary,
+          refundSummary: "İade talebiniz firmaya gönderildi.",
+        };
+      },
+  );
+}
+
+async function reviewRefundRequestCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
+  }
+
+  const refundRequestId = normalizeTrimmedString(data?.refundRequestId);
+  if (!refundRequestId) {
+    throw createError("invalid-argument", "refundRequestId zorunludur.");
+  }
+
+  const status = parseRefundRequestStatus(data?.status, createError);
+  if (status !== "approved" && status !== "rejected") {
+    throw createError(
+        "invalid-argument",
+        "İade talebi yalnızca approved veya rejected olarak sonuçlandırılabilir.",
+    );
+  }
+
+  const rejectionReason = normalizeTrimmedString(data?.rejectionReason);
+  if (status === "rejected" && !rejectionReason) {
+    throw createError("invalid-argument", "Red nedeni zorunludur.");
+  }
+
+  return withClient(
+      {createError, actionLabel: "İade talebi inceleme"},
+      async (client) => {
+        await expireOverdueReservations(client);
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        assertAllowedRoles(appUser, ["company_officer"], createError);
+
+        const updatedPayment = await withTransaction(client, async () => {
+          const requestResult = await client.query(
+              `
+                SELECT
+                  rr.id,
+                  rr.reservation_id,
+                  rr.payment_id,
+                  rr.requested_by_user_id,
+                  rr.status,
+                  rr.refund_amount_minor,
+                  rr.refund_summary,
+                  t.id AS trip_id,
+                  t.trip_code,
+                  t.origin,
+                  t.destination
+                FROM refund_requests rr
+                INNER JOIN reservations r ON r.id = rr.reservation_id
+                INNER JOIN payments p ON p.id = rr.payment_id
+                INNER JOIN trips t ON t.id = r.trip_id
+                INNER JOIN companies c ON c.id = t.company_id
+                WHERE rr.id = $1
+                  AND c.officer_user_id = $2
+                FOR UPDATE OF rr, p, r
+                LIMIT 1
+              `,
+              [refundRequestId, appUser.id],
+          );
+
+          if (requestResult.rows.length === 0) {
+            throw createError("not-found", "İade talebi bulunamadı.");
+          }
+
+          const request = requestResult.rows[0];
+          if (request.status !== "pending") {
+            throw createError(
+                "failed-precondition",
+                "Yalnızca bekleyen iade talepleri sonuçlandırılabilir.",
+            );
+          }
+
+          await client.query(
+              `
+                UPDATE refund_requests
+                SET
+                  status = $2::refund_request_status,
+                  decided_by_officer_id = $3,
+                  decided_at = now(),
+                  rejection_reason = CASE
+                    WHEN $2::refund_request_status = 'rejected'::refund_request_status THEN $4
+                    ELSE NULL
+                  END,
+                  updated_at = now()
+                WHERE id = $1
+              `,
+              [refundRequestId, status, appUser.id, rejectionReason || null],
+          );
+
+          if (status === "approved") {
+            const paymentUpdateResult = await client.query(
+                `
+                  UPDATE payments
+                  SET
+                    status = 'refunded'::payment_status,
+                    updated_at = now()
+                  WHERE id = $1
+                    AND status = 'paid'::payment_status
+                `,
+                [request.payment_id],
+            );
+            if (paymentUpdateResult.rowCount === 0) {
+              throw createError(
+                  "failed-precondition",
+                  "Ödeme durumu değiştiği için iade onaylanamadı.",
+              );
+            }
+
+            await client.query(
+                `
+                  UPDATE reservations
+                  SET
+                    status = 'cancelled_by_user'::reservation_status,
+                    cancelled_at = now(),
+                    updated_at = now()
+                  WHERE id = $1
+                    AND status = 'paid'::reservation_status
+                `,
+                [request.reservation_id],
+            );
+
+            await createNotification(client, {
+              userId: request.requested_by_user_id,
+              title: "İade talebiniz onaylandı",
+              body:
+                `${request.trip_code} kodlu ${request.origin} - ${request.destination} seferi için iade talebiniz onaylandı.`,
+              category: "refund_approved",
+              relatedTripId: request.trip_id,
+              relatedReservationId: request.reservation_id,
+              relatedPaymentId: request.payment_id,
+            });
+          } else {
+            await createNotification(client, {
+              userId: request.requested_by_user_id,
+              title: "İade talebiniz reddedildi",
+              body:
+                `${request.trip_code} kodlu ${request.origin} - ${request.destination} seferi için iade talebiniz reddedildi. Neden: ${rejectionReason}`,
+              category: "refund_rejected",
+              relatedTripId: request.trip_id,
+              relatedReservationId: request.reservation_id,
+              relatedPaymentId: request.payment_id,
+            });
+          }
+
+          return loadAccessiblePaymentRowByReservationId(
+              client,
+              appUser,
+              request.reservation_id,
+              createError,
+          );
+        });
+
+        return {
+          payment: serializePaymentForClient(updatedPayment),
         };
       },
   );
@@ -447,4 +671,5 @@ module.exports = {
   listPaymentsCore,
   processFakePaymentCore,
   requestRefundCore,
+  reviewRefundRequestCore,
 };

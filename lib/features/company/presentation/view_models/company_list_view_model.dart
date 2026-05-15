@@ -43,7 +43,7 @@ class CompanyListViewModel extends BaseViewModel {
       _companies = await _repository.fetchCompanies(status: _selectedStatus);
       notifyListeners();
     } catch (_) {
-      _errorMessage = 'Firma listesi su anda yuklenemedi.';
+      _errorMessage = 'Firma listesi şu anda yüklenemedi.';
       notifyListeners();
     } finally {
       setBusy(false);
@@ -62,7 +62,7 @@ class CompanyListViewModel extends BaseViewModel {
       _companies = await _repository.fetchCompanies(status: _selectedStatus);
       notifyListeners();
     } catch (_) {
-      _errorMessage = 'Firma onaylanamadi.';
+      _errorMessage = 'Firma onaylanamadı.';
       notifyListeners();
       rethrow;
     } finally {

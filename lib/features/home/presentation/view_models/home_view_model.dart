@@ -20,13 +20,13 @@ class HomeViewModel {
     UserRole.companyOfficer =>
       'Firma bilgilerinizi güncelleyip operasyon panelinden doluluk, yolcu ve sefer akışlarını takip edebilirsiniz.',
     UserRole.admin =>
-      'Dashboard üzerinden bekleyen kayıtları, satış özetlerini ve red nedenlerini yönetebilirsiniz.',
+      'Panel üzerinden bekleyen kayıtları, satış özetlerini ve red nedenlerini yönetebilirsiniz.',
   };
 
   String get tripButtonLabel => switch (role) {
     UserRole.normalUser => 'Tüm Seferleri Gör',
     UserRole.companyOfficer => 'Şirket Seferlerini Yönet',
-    UserRole.admin => 'Seferleri Incele',
+    UserRole.admin => 'Seferleri İncele',
   };
 
   String get email => _authRepository.resolveEmail();

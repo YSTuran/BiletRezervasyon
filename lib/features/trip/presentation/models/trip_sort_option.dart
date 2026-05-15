@@ -8,6 +8,6 @@ enum TripSortOption {
     TripSortOption.departureAscending => 'En Erken Kalkış',
     TripSortOption.priceAscending => 'En Dusuk Fiyat',
     TripSortOption.priceDescending => 'En Yuksek Fiyat',
-    TripSortOption.durationAscending => 'En Kisa Sure',
+    TripSortOption.durationAscending => 'En Kısa Süre',
   };
 }

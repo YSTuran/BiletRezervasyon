@@ -252,7 +252,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Firma taniminiza gore sadece bu ulasim turunde sefer acabilirsiniz.',
+                        'Firma tanımınıza göre sadece bu ulaşım türünde sefer açabilirsiniz.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 16),

@@ -11,6 +11,7 @@ import '../../domain/models/trip_seat.dart';
 import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../view_models/trip_detail_view_model.dart';
+import '../widgets/departure_countdown_chip.dart';
 
 class TripDetailScreen extends StatelessWidget {
   const TripDetailScreen({required this.arguments, super.key});
@@ -52,7 +53,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer onaylandi.')));
+      ).showSnackBar(const SnackBar(content: Text('Sefer onaylandı.')));
     } catch (_) {
       if (!context.mounted) {
         return;
@@ -60,7 +61,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer onaylanamadi.')));
+      ).showSnackBar(const SnackBar(content: Text('Sefer onaylanamadı.')));
     }
   }
 
@@ -136,6 +137,38 @@ class _TripDetailViewState extends State<_TripDetailView> {
     }
   }
 
+  Future<void> _cancelTrip(BuildContext context) async {
+    final viewModel = context.read<TripDetailViewModel>();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => const _TripCancelDialog(),
+    );
+
+    if (!context.mounted || reason == null) {
+      return;
+    }
+
+    try {
+      final trip = await viewModel.cancelTrip(reason);
+      if (!context.mounted || trip == null) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sefer iptal edildi. Yolculara bildirim gönderildi.'),
+        ),
+      );
+    } on TripReviewException catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   bool _isOwnReservationSeat(TripDetailViewModel viewModel, TripSeat seat) {
     return viewModel.currentUserReservation?.tripSeatId == seat.id;
   }
@@ -182,7 +215,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
               if (reservation.seatNumber != null)
                 Text('Koltuk: ${reservation.seatNumber}'),
               Text(
-                'Talep Zamani: ${TripPresentationHelper.formatDateTime(reservation.requestedAt)}',
+                'Talep Zamanı: ${TripPresentationHelper.formatDateTime(reservation.requestedAt)}',
               ),
               if (reservation.status == ReservationStatus.approved)
                 Text(
@@ -243,7 +276,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
                   ? null
                   : () => _createReservation(context),
               icon: const Icon(Icons.add_task_outlined),
-              label: const Text('Rezervasyon Talebi Gonder'),
+              label: const Text('Rezervasyon Talebi Gönder'),
             ),
           ],
         ),
@@ -312,7 +345,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
 
     if (viewModel.errorMessage != null && trip == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Sefer Detayi')),
+        appBar: AppBar(title: const Text('Sefer Detayı')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -323,7 +356,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
     }
 
     if (trip == null) {
-      return const Scaffold(body: Center(child: Text('Sefer bulunamadi.')));
+      return const Scaffold(body: Center(child: Text('Sefer bulunamadı.')));
     }
 
     return Scaffold(
@@ -353,11 +386,13 @@ class _TripDetailViewState extends State<_TripDetailView> {
                     Text(
                       'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                     ),
+                    const SizedBox(height: 8),
+                    DepartureCountdownChip(departureAt: trip.departureAt),
                     Text(
                       'Varış: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
                     ),
                     Text(
-                      'Sure: ${TripPresentationHelper.formatDuration(trip)}',
+                      'Süre: ${TripPresentationHelper.formatDuration(trip)}',
                     ),
                     Text('Kapasite: ${trip.seatCapacity} koltuk'),
                     Text(
@@ -382,11 +417,15 @@ class _TripDetailViewState extends State<_TripDetailView> {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    'Bu ekranda seferin durumunu, kapasitesini ve olasi operasyon bilgilerini izleyebilirsiniz.',
+                    'Bu ekranda seferin durumunu, kapasitesini ve olası operasyon bilgilerini izleyebilirsiniz.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
               ),
+            ],
+            if (viewModel.role == UserRole.companyOfficer) ...[
+              const SizedBox(height: 12),
+              _TripOperationsCard(viewModel: viewModel),
             ],
             if (viewModel.canCreateReservation) ...[
               const SizedBox(height: 12),
@@ -429,6 +468,33 @@ class _TripDetailViewState extends State<_TripDetailView> {
                 ),
               ),
             ],
+            if (viewModel.canCancelTrip) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Firma İşlemleri',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: viewModel.isBusy
+                            ? null
+                            : () {
+                                _cancelTrip(context);
+                              },
+                        icon: const Icon(Icons.event_busy_outlined),
+                        label: const Text('Seferi İptal Et'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Card(
               child: Padding(
@@ -460,6 +526,84 @@ class _TripDetailViewState extends State<_TripDetailView> {
 }
 
 typedef _SeatBuilder = Widget Function(TripSeat seat);
+
+class _TripOperationsCard extends StatelessWidget {
+  const _TripOperationsCard({required this.viewModel});
+
+  final TripDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final reservations = viewModel.tripReservations;
+    final activeReservations = reservations
+        .where(
+          (reservation) =>
+              reservation.status == ReservationStatus.approved ||
+              reservation.status == ReservationStatus.paid,
+        )
+        .toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Sefer Operasyonu',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.event_seat_outlined, size: 18),
+                  label: Text('Doluluk: %${viewModel.occupancyRatePercent}'),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.groups_2_outlined, size: 18),
+                  label: Text(
+                    '${viewModel.occupiedSeatCount}/${viewModel.trip?.seatCapacity ?? 0} koltuk',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Yolcu Listesi',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            if (activeReservations.isEmpty)
+              const Text('Bu sefer için aktif yolcu bulunmuyor.')
+            else
+              ...activeReservations.map((reservation) {
+                final passengerName =
+                    (reservation.passengerName ?? '').trim().isEmpty
+                    ? 'Yolcu'
+                    : reservation.passengerName!;
+                final passengerEmail = reservation.passengerEmail ?? '-';
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(passengerName),
+                  subtitle: Text(
+                    'Koltuk: ${reservation.seatNumber ?? '-'}\n'
+                    'Durum: ${ReservationPresentationHelper.statusLabel(reservation.status)}\n'
+                    '$passengerEmail',
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SeatLayoutView extends StatelessWidget {
   const _SeatLayoutView({
@@ -630,7 +774,7 @@ class _TripRejectDialogState extends State<_TripRejectDialog> {
         maxLines: 3,
         decoration: const InputDecoration(
           labelText: 'Red nedeni',
-          hintText: 'Kisa bir aciklama yazin',
+          hintText: 'Kısa bir açıklama yazın',
         ),
       ),
       actions: [
@@ -638,13 +782,59 @@ class _TripRejectDialogState extends State<_TripRejectDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('Vazgec'),
+          child: const Text('Vazgeç'),
         ),
         FilledButton(
           onPressed: () {
             Navigator.of(context).pop(_reasonController.text.trim());
           },
           child: const Text('Reddet'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TripCancelDialog extends StatefulWidget {
+  const _TripCancelDialog();
+
+  @override
+  State<_TripCancelDialog> createState() => _TripCancelDialogState();
+}
+
+class _TripCancelDialogState extends State<_TripCancelDialog> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Seferi İptal Et'),
+      content: TextField(
+        controller: _reasonController,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          labelText: 'İptal nedeni',
+          hintText: 'Kısa bir açıklama yazın',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(_reasonController.text.trim());
+          },
+          child: const Text('İptal Et'),
         ),
       ],
     );

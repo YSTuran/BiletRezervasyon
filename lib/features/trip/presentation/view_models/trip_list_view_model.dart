@@ -102,7 +102,7 @@ class TripListViewModel extends BaseViewModel {
 
     return switch (role) {
       UserRole.normalUser =>
-        'Yaklasan veya yolda olan gosterilecek sefer bulunmuyor.',
+        'Yaklaşan veya yolda olan gösterilecek sefer bulunmuyor.',
       UserRole.companyOfficer => 'Şirketinize ait kayıtlı sefer bulunmuyor.',
       UserRole.admin => 'Sistemde kayıtlı sefer bulunmuyor.',
     };
@@ -202,7 +202,7 @@ class TripListViewModel extends BaseViewModel {
       _clampPage();
       notifyListeners();
     } catch (_) {
-      _errorMessage = 'Seferler su anda yuklenemedi.';
+      _errorMessage = 'Seferler şu anda yüklenemedi.';
       notifyListeners();
     } finally {
       setBusy(false);

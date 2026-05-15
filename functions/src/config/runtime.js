@@ -1,5 +1,6 @@
 const {setGlobalOptions, logger} = require("firebase-functions/v2");
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {defineSecret} = require("firebase-functions/params");
 const functionsV1 = require("firebase-functions/v1");
 const admin = require("firebase-admin");
@@ -27,4 +28,5 @@ module.exports = {
   initializeFirebaseRuntime,
   logger,
   onCall,
+  onSchedule,
 };

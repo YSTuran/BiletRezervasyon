@@ -9,6 +9,7 @@ const {
   resolveCompanyTransportTypeColumn,
   resolveTripTransportTypeColumn,
 } = require("./postgres");
+const {createNotification} = require("./notifications");
 
 async function loadRequiredAppUser(client, resolvedAuth, createError) {
   const result = await client.query(
@@ -178,20 +179,33 @@ async function loadAccessibleReservationRow(
 }
 
 async function expireOverdueReservations(client) {
-  await client.query(
+  const expiredResult = await client.query(
       `
-        UPDATE reservations r
-        SET
-          status = 'expired'::reservation_status,
-          updated_at = now()
-        WHERE r.status = 'approved'::reservation_status
-          AND r.payment_deadline_at < now()
-          AND NOT EXISTS (
-            SELECT 1
-            FROM payments p
-            WHERE p.reservation_id = r.id
-              AND p.status = 'paid'::payment_status
-          )
+        WITH expired AS (
+          UPDATE reservations r
+          SET
+            status = 'expired'::reservation_status,
+            updated_at = now()
+          FROM trips t
+          WHERE t.id = r.trip_id
+            AND r.status = 'approved'::reservation_status
+            AND r.payment_deadline_at < now()
+            AND NOT EXISTS (
+              SELECT 1
+              FROM payments p
+              WHERE p.reservation_id = r.id
+                AND p.status = 'paid'::payment_status
+            )
+          RETURNING
+            r.id,
+            r.user_id,
+            r.trip_id,
+            t.trip_code,
+            t.origin,
+            t.destination
+        )
+        SELECT *
+        FROM expired
       `,
   );
 
@@ -210,6 +224,19 @@ async function expireOverdueReservations(client) {
           )
       `,
   );
+
+  for (const row of expiredResult.rows) {
+    await createNotification(client, {
+      userId: row.user_id,
+      title: "Rezervasyon süresi doldu",
+      body:
+        `${row.trip_code} kodlu ${row.origin} - ${row.destination} seferi ` +
+        "için ödeme süresi dolduğu için rezervasyonunuz otomatik iptal edildi.",
+      category: "reservation_expired",
+      relatedTripId: row.trip_id,
+      relatedReservationId: row.id,
+    });
+  }
 }
 
 async function ensurePendingPaymentForReservation(client, reservationId) {

@@ -8,6 +8,7 @@ import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../models/trip_sort_option.dart';
 import '../view_models/trip_list_view_model.dart';
+import '../widgets/departure_countdown_chip.dart';
 
 class TripListScreen extends StatelessWidget {
   const TripListScreen({required this.arguments, super.key});
@@ -163,7 +164,7 @@ class _TripListViewState extends State<_TripListView> {
                       key: ValueKey(viewModel.sortOption),
                       initialValue: viewModel.sortOption,
                       decoration: const InputDecoration(
-                        labelText: 'Siralama',
+                        labelText: 'Sıralama',
                         prefixIcon: Icon(Icons.sort_outlined),
                       ),
                       items: TripSortOption.values
@@ -362,12 +363,19 @@ class _TripListViewState extends State<_TripListView> {
                         'Kalkış: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
+                      if (viewModel.role == UserRole.normalUser) ...[
+                        const SizedBox(height: 8),
+                        DepartureCountdownChip(
+                          departureAt: trip.departureAt,
+                          compact: true,
+                        ),
+                      ],
                       Text(
                         'Varış: ${TripPresentationHelper.formatDateTime(trip.arrivalAt)}',
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
-                        'Sure: ${TripPresentationHelper.formatDuration(trip)}',
+                        'Süre: ${TripPresentationHelper.formatDuration(trip)}',
                         style: TextStyle(color: visualStyle.foregroundColor),
                       ),
                       Text(
@@ -460,7 +468,7 @@ class _TripPaginationBar extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                tooltip: 'Onceki sayfa',
+                tooltip: 'Önceki sayfa',
                 onPressed: viewModel.canGoPrevious
                     ? viewModel.goToPreviousPage
                     : null,

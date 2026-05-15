@@ -25,6 +25,9 @@ class Payment {
     this.refundAmountMinor,
     this.canRequestRefund = false,
     this.refundSummary,
+    this.refundRequestId,
+    this.refundRequestStatus,
+    this.refundRequestRejectionReason,
   }) : assert(amountMinor > 0, 'amountMinor must be greater than 0');
 
   final String id;
@@ -50,6 +53,9 @@ class Payment {
   final int? refundAmountMinor;
   final bool canRequestRefund;
   final String? refundSummary;
+  final String? refundRequestId;
+  final RefundRequestStatus? refundRequestStatus;
+  final String? refundRequestRejectionReason;
 
   Payment copyWith({
     String? id,
@@ -75,6 +81,9 @@ class Payment {
     int? refundAmountMinor,
     bool? canRequestRefund,
     String? refundSummary,
+    String? refundRequestId,
+    RefundRequestStatus? refundRequestStatus,
+    String? refundRequestRejectionReason,
   }) {
     return Payment(
       id: id ?? this.id,
@@ -101,6 +110,10 @@ class Payment {
       refundAmountMinor: refundAmountMinor ?? this.refundAmountMinor,
       canRequestRefund: canRequestRefund ?? this.canRequestRefund,
       refundSummary: refundSummary ?? this.refundSummary,
+      refundRequestId: refundRequestId ?? this.refundRequestId,
+      refundRequestStatus: refundRequestStatus ?? this.refundRequestStatus,
+      refundRequestRejectionReason:
+          refundRequestRejectionReason ?? this.refundRequestRejectionReason,
     );
   }
 
@@ -129,6 +142,9 @@ class Payment {
       'refund_amount_minor': refundAmountMinor,
       'can_request_refund': canRequestRefund,
       'refund_summary': refundSummary,
+      'refund_request_id': refundRequestId,
+      'refund_request_status': refundRequestStatus?.value,
+      'refund_request_rejection_reason': refundRequestRejectionReason,
     };
   }
 
@@ -171,6 +187,14 @@ class Payment {
       refundAmountMinor: json['refund_amount_minor'] as int?,
       canRequestRefund: json['can_request_refund'] == true,
       refundSummary: json['refund_summary'] as String?,
+      refundRequestId: json['refund_request_id'] as String?,
+      refundRequestStatus: json['refund_request_status'] == null
+          ? null
+          : RefundRequestStatus.fromValue(
+              json['refund_request_status'] as String,
+            ),
+      refundRequestRejectionReason:
+          json['refund_request_rejection_reason'] as String?,
     );
   }
 }

@@ -29,7 +29,7 @@ class CompanyFormViewModel extends BaseViewModel {
       _transportType = _company?.transportType ?? TransportType.bus;
       notifyListeners();
     } catch (_) {
-      _errorMessage = 'Firma bilgileri yuklenemedi.';
+      _errorMessage = 'Firma bilgileri yüklenemedi.';
       notifyListeners();
     } finally {
       setBusy(false);

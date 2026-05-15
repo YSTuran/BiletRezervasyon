@@ -32,14 +32,14 @@ class _CompanyManagementView extends StatelessWidget {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('${company.name} onaylandi.')));
+      ).showSnackBar(SnackBar(content: Text('${company.name} onaylandı.')));
     } catch (_) {
       if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Firma onaylanamadi.')));
+      ).showSnackBar(const SnackBar(content: Text('Firma onaylanamadı.')));
     }
   }
 
@@ -55,7 +55,7 @@ class _CompanyManagementView extends StatelessWidget {
             maxLines: 3,
             decoration: const InputDecoration(
               labelText: 'Red nedeni',
-              hintText: 'Kisa bir aciklama yazin',
+              hintText: 'Kısa bir açıklama yazın',
             ),
           ),
           actions: [
@@ -63,7 +63,7 @@ class _CompanyManagementView extends StatelessWidget {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Vazgec'),
+              child: const Text('Vazgeç'),
             ),
             FilledButton(
               onPressed: () {

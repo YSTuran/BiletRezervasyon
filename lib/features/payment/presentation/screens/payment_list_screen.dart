@@ -75,13 +75,13 @@ class _PaymentListView extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(dialogContext).pop(false);
                   },
-                  child: const Text('Vazgec'),
+                  child: const Text('Vazgeç'),
                 ),
                 FilledButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop(true);
                   },
-                  child: const Text('İadeyi Tamamla'),
+                  child: const Text('Talebi Gönder'),
                 ),
               ],
             );
@@ -105,11 +105,101 @@ class _PaymentListView extends StatelessWidget {
       }
 
       final message =
-          'İade tamamlandı. ${result.refundSummary}: '
+          '${result.refundSummary} Tahmini tutar: '
           '${PaymentPresentationHelper.formatPrice(result.refundAmountMinor)}';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+    } on PaymentActionException catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
+  Future<void> _approveRefund(BuildContext context, Payment payment) async {
+    final refundRequestId = payment.refundRequestId;
+    if (refundRequestId == null) {
+      return;
+    }
+
+    try {
+      await context.read<PaymentListViewModel>().approveRefundRequest(
+        refundRequestId,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('İade talebi onaylandı.')));
+    } on PaymentActionException catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
+  Future<void> _rejectRefund(BuildContext context, Payment payment) async {
+    final refundRequestId = payment.refundRequestId;
+    if (refundRequestId == null) {
+      return;
+    }
+
+    final reasonController = TextEditingController();
+    final rejectionReason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('İade Talebini Reddet'),
+          content: TextField(
+            controller: reasonController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Red nedeni',
+              hintText: 'Kısa bir açıklama yazın',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(reasonController.text.trim());
+              },
+              child: const Text('Reddet'),
+            ),
+          ],
+        );
+      },
+    );
+    reasonController.dispose();
+
+    if (!context.mounted || rejectionReason == null) {
+      return;
+    }
+
+    try {
+      await context.read<PaymentListViewModel>().rejectRefundRequest(
+        refundRequestId: refundRequestId,
+        rejectionReason: rejectionReason,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('İade talebi reddedildi.')));
     } on PaymentActionException catch (error) {
       if (!context.mounted) {
         return;
@@ -230,6 +320,21 @@ class _PaymentListView extends StatelessWidget {
                           'İade Kuralı: ${PaymentPresentationHelper.refundSummaryLabel(payment)!}',
                         ),
                       ),
+                    if (payment.refundRequestStatus != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'İade Talebi: ${PaymentPresentationHelper.refundRequestStatusLabel(payment.refundRequestStatus!)}',
+                      ),
+                    ],
+                    if ((payment.refundRequestRejectionReason ?? '')
+                        .trim()
+                        .isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'İade Red Nedeni: ${payment.refundRequestRejectionReason}',
+                        ),
+                      ),
                     if (viewModel.canOpenCheckout(payment)) ...[
                       const SizedBox(height: 16),
                       FilledButton.icon(
@@ -241,7 +346,7 @@ class _PaymentListView extends StatelessWidget {
                         icon: const Icon(Icons.credit_card_outlined),
                         label: Text(
                           payment.status == PaymentStatus.failed
-                              ? 'Tekrar Ode'
+                              ? 'Tekrar Öde'
                               : 'Ödeme Yap',
                         ),
                       ),
@@ -256,6 +361,36 @@ class _PaymentListView extends StatelessWidget {
                               },
                         icon: const Icon(Icons.assignment_return_outlined),
                         label: const Text('İade Talep Et'),
+                      ),
+                    ],
+                    if (viewModel.canReviewRefund(payment)) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: viewModel.isBusy
+                                  ? null
+                                  : () {
+                                      _approveRefund(context, payment);
+                                    },
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text('İadeyi Onayla'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: viewModel.isBusy
+                                  ? null
+                                  : () {
+                                      _rejectRefund(context, payment);
+                                    },
+                              icon: const Icon(Icons.cancel_outlined),
+                              label: const Text('Reddet'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],

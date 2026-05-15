@@ -75,7 +75,7 @@ function readSecret(name, param) {
     }
   }
 
-  throw new Error(`${name} secret bulunamadi.`);
+  throw new Error(`${name} secret bulunamadı.`);
 }
 
 function getPool() {
@@ -145,7 +145,7 @@ async function resolveColumnName({
   const availableColumns = columns.length > 0 ? columns.join(", ") : "yok";
   throw createError(
       "failed-precondition",
-      `${tableName} tablosunda ${logicalName} kolonu bulunamadi. Bulunan kolonlar: ${availableColumns}`,
+      `${tableName} tablosunda ${logicalName} kolonu bulunamadı. Bulunan kolonlar: ${availableColumns}`,
   );
 }
 
@@ -153,7 +153,7 @@ async function resolveCompanyTransportTypeColumn(client, createError) {
   return resolveColumnName({
     client,
     tableName: "companies",
-    logicalName: "ulasim tipi",
+    logicalName: "ulaşım tipi",
     candidates: ["transport_type", "transportType", "transportation_type", "travel_type", "type"],
     createError,
   });
@@ -163,7 +163,7 @@ async function resolveTripTransportTypeColumn(client, createError) {
   return resolveColumnName({
     client,
     tableName: "trips",
-    logicalName: "ulasim tipi",
+    logicalName: "ulaşım tipi",
     candidates: ["transport_type", "transportType", "transportation_type", "travel_type", "type"],
     createError,
   });
@@ -229,7 +229,19 @@ function buildReservationSelectClause(tripTransportTypeExpression, reservationAl
     t.departure_at AS trip_departure_at,
     t.arrival_at AS trip_arrival_at,
     ${tripTransportTypeExpression} AS trip_transport_type,
-    c.name AS company_name
+    c.name AS company_name,
+    (
+      SELECT u.full_name
+      FROM app_users u
+      WHERE u.id = ${prefix}user_id
+      LIMIT 1
+    ) AS passenger_name,
+    (
+      SELECT u.email
+      FROM app_users u
+      WHERE u.id = ${prefix}user_id
+      LIMIT 1
+    ) AS passenger_email
   `;
 }
 
@@ -258,7 +270,28 @@ function buildPaymentSelectClause(
     t.departure_at AS trip_departure_at,
     t.arrival_at AS trip_arrival_at,
     ${tripTransportTypeExpression} AS trip_transport_type,
-    c.name AS company_name
+    c.name AS company_name,
+    (
+      SELECT rr.id
+      FROM refund_requests rr
+      WHERE rr.payment_id = ${prefix}id
+      ORDER BY rr.created_at DESC
+      LIMIT 1
+    ) AS refund_request_id,
+    (
+      SELECT rr.status::text
+      FROM refund_requests rr
+      WHERE rr.payment_id = ${prefix}id
+      ORDER BY rr.created_at DESC
+      LIMIT 1
+    ) AS refund_request_status,
+    (
+      SELECT rr.rejection_reason
+      FROM refund_requests rr
+      WHERE rr.payment_id = ${prefix}id
+      ORDER BY rr.created_at DESC
+      LIMIT 1
+    ) AS refund_request_rejection_reason
   `;
 }
 

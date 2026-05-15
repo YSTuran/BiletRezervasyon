@@ -88,6 +88,8 @@ function serializeReservationRow(row) {
     trip_arrival_at: serializeDate(row.trip_arrival_at),
     trip_transport_type: row.trip_transport_type,
     company_name: row.company_name,
+    passenger_name: row.passenger_name,
+    passenger_email: row.passenger_email,
   };
 }
 
@@ -119,12 +121,35 @@ function serializePaymentRow(row) {
     refund_amount_minor: row.refund_amount_minor ?? null,
     can_request_refund: row.can_request_refund === true,
     refund_summary: row.refund_summary ?? null,
+    refund_request_id: row.refund_request_id ?? null,
+    refund_request_status: row.refund_request_status ?? null,
+    refund_request_rejection_reason:
+      row.refund_request_rejection_reason ?? null,
+  };
+}
+
+function serializeNotificationRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    body: row.body,
+    category: row.category,
+    related_trip_id: row.related_trip_id,
+    related_reservation_id: row.related_reservation_id,
+    related_payment_id: row.related_payment_id,
+    read_at: serializeDate(row.read_at),
+    created_at: serializeDate(row.created_at),
   };
 }
 
 module.exports = {
   serializeCompanyRow,
   serializeDate,
+  serializeNotificationRow,
   serializePaymentRow,
   serializeReservationRow,
   serializeTripRow,

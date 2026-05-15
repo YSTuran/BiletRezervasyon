@@ -21,6 +21,7 @@ const {
   quoteIdentifier,
   resolveTripTransportTypeColumn,
 } = require("../shared/postgres");
+const {createNotification} = require("../shared/notifications");
 const {createTripCode, isTripCodeConflict} = require("./trip-code");
 
 const SEAT_CAPACITY_OPTIONS_BY_TRANSPORT = {
@@ -291,7 +292,7 @@ async function createTripCore({auth, data, createError}) {
         if (!company) {
           throw createError(
               "failed-precondition",
-              "Once firma bilgilerinizi doldurmalisiniz.",
+              "Önce firma bilgilerinizi doldurmalısınız.",
           );
         }
         if (company.status !== "approved") {
@@ -303,7 +304,7 @@ async function createTripCore({auth, data, createError}) {
         if (company.transport_type !== requestedTransportType) {
           throw createError(
               "failed-precondition",
-              "Firma yalnizca kendi ulasim turunde sefer acabilir.",
+              "Firma yalnızca kendi ulaşım türünde sefer açabilir.",
           );
         }
 
@@ -413,7 +414,7 @@ async function reviewTripCore({auth, data, createError}) {
         );
 
         if (result.rows.length === 0) {
-          throw createError("not-found", "Sefer bulunamadi.");
+          throw createError("not-found", "Sefer bulunamadı.");
         }
 
         return {
@@ -423,7 +424,173 @@ async function reviewTripCore({auth, data, createError}) {
   );
 }
 
+async function cancelTripCore({auth, data, createError}) {
+  const resolvedAuth = resolveAuthContext({auth, data});
+  if (!resolvedAuth) {
+    throw createError("unauthenticated", "Bu işlem için giriş yapmalısınız.");
+  }
+
+  const tripId = normalizeTrimmedString(data?.tripId);
+  if (!tripId) {
+    throw createError("invalid-argument", "tripId zorunludur.");
+  }
+
+  const cancellationReason = normalizeTrimmedString(data?.cancellationReason);
+
+  return withClient(
+      {createError, actionLabel: "Sefer iptali"},
+      async (client) => {
+        const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
+        assertAllowedRoles(appUser, ["company_officer"], createError);
+        const transportTypeColumn = await resolveTripTransportTypeColumn(
+            client,
+            createError,
+        );
+
+        const updatedTrip = await withTransaction(client, async () => {
+          const tripResult = await client.query(
+              `
+                SELECT
+                  t.id,
+                  t.trip_code,
+                  t.origin,
+                  t.destination,
+                  t.departure_at,
+                  t.status,
+                  c.id AS company_id
+                FROM trips t
+                INNER JOIN companies c ON c.id = t.company_id
+                WHERE t.id = $1
+                  AND c.officer_user_id = $2
+                FOR UPDATE OF t
+                LIMIT 1
+              `,
+              [tripId, appUser.id],
+          );
+
+          if (tripResult.rows.length === 0) {
+            throw createError("not-found", "Sefer bulunamadı.");
+          }
+
+          const trip = tripResult.rows[0];
+          if (trip.status === "cancelled") {
+            throw createError("failed-precondition", "Sefer zaten iptal edilmiş.");
+          }
+          if (new Date(trip.departure_at).getTime() <= Date.now()) {
+            throw createError(
+                "failed-precondition",
+                "Kalkışı başlamış seferler firma tarafından iptal edilemez.",
+            );
+          }
+
+          const affectedReservationsResult = await client.query(
+              `
+                SELECT
+                  r.id AS reservation_id,
+                  r.user_id,
+                  r.status AS reservation_status,
+                  p.id AS payment_id,
+                  p.status AS payment_status
+                FROM reservations r
+                LEFT JOIN payments p ON p.reservation_id = r.id
+                WHERE r.trip_id = $1
+                  AND r.status = ANY(
+                    ARRAY[
+                      'pending_approval'::reservation_status,
+                      'approved'::reservation_status,
+                      'paid'::reservation_status
+                    ]
+                  )
+              `,
+              [tripId],
+          );
+
+          const updateTripResult = await client.query(
+              `
+                UPDATE trips
+                SET
+                  status = 'cancelled'::trip_status,
+                  rejection_reason = NULLIF($2, ''),
+                  updated_at = now()
+                WHERE id = $1
+                RETURNING ${buildTripSelectClause(quoteIdentifier(transportTypeColumn))}
+              `,
+              [tripId, cancellationReason],
+          );
+
+          await client.query(
+              `
+                UPDATE reservations
+                SET
+                  status = 'cancelled_by_company'::reservation_status,
+                  cancelled_at = now(),
+                  updated_at = now()
+                WHERE trip_id = $1
+                  AND status = ANY(
+                    ARRAY[
+                      'pending_approval'::reservation_status,
+                      'approved'::reservation_status,
+                      'paid'::reservation_status
+                    ]
+                  )
+              `,
+              [tripId],
+          );
+
+          await client.query(
+              `
+                UPDATE payments p
+                SET
+                  status = CASE
+                    WHEN p.status = 'paid'::payment_status
+                      THEN 'refunded'::payment_status
+                    ELSE 'failed'::payment_status
+                  END,
+                  updated_at = now()
+                WHERE EXISTS (
+                  SELECT 1
+                  FROM reservations r
+                  WHERE r.id = p.reservation_id
+                    AND r.trip_id = $1
+                )
+                  AND p.status = ANY(
+                    ARRAY[
+                      'pending'::payment_status,
+                      'paid'::payment_status
+                    ]
+                  )
+              `,
+              [tripId],
+          );
+
+          for (const row of affectedReservationsResult.rows) {
+            const wasPaid = row.reservation_status === "paid" ||
+              row.payment_status === "paid";
+            await createNotification(client, {
+              userId: row.user_id,
+              title: "Sefer iptal edildi",
+              body: wasPaid ?
+                `${trip.trip_code} kodlu ${trip.origin} - ${trip.destination} seferi iptal edildi. Ödemeniz otomatik iade edildi.` :
+                `${trip.trip_code} kodlu ${trip.origin} - ${trip.destination} seferi iptal edildi. Rezervasyonunuz otomatik kapatıldı.`,
+              category: "trip_cancelled",
+              relatedTripId: tripId,
+              relatedReservationId: row.reservation_id,
+              relatedPaymentId: row.payment_id,
+            });
+          }
+
+          return updateTripResult.rows[0];
+        });
+
+        return {
+          trip: serializeTripRow(updatedTrip),
+        };
+      },
+  );
+}
+
 module.exports = {
+  cancelTripCore,
   createTripCore,
   getTripDetailCore,
   listTripsCore,

@@ -41,6 +41,12 @@ class PaymentListViewModel extends BaseViewModel {
     return role == UserRole.normalUser && payment.canRequestRefund;
   }
 
+  bool canReviewRefund(Payment payment) {
+    return role == UserRole.companyOfficer &&
+        payment.refundRequestId != null &&
+        payment.refundRequestStatus == RefundRequestStatus.pending;
+  }
+
   Future<void> load() async {
     if (isBusy) {
       return;
@@ -73,6 +79,57 @@ class PaymentListViewModel extends BaseViewModel {
       _errorMessage = null;
       notifyListeners();
       return result;
+    } on PaymentActionException {
+      rethrow;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  Future<Payment?> approveRefundRequest(String refundRequestId) async {
+    return _reviewRefundRequest(
+      refundRequestId: refundRequestId,
+      status: RefundRequestStatus.approved,
+    );
+  }
+
+  Future<Payment?> rejectRefundRequest({
+    required String refundRequestId,
+    required String rejectionReason,
+  }) async {
+    final trimmedReason = rejectionReason.trim();
+    if (trimmedReason.isEmpty) {
+      throw const PaymentActionException('Red nedeni zorunludur.');
+    }
+    return _reviewRefundRequest(
+      refundRequestId: refundRequestId,
+      status: RefundRequestStatus.rejected,
+      rejectionReason: trimmedReason,
+    );
+  }
+
+  Future<Payment?> _reviewRefundRequest({
+    required String refundRequestId,
+    required RefundRequestStatus status,
+    String? rejectionReason,
+  }) async {
+    if (isBusy) {
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      final payment = await _repository.reviewRefundRequest(
+        refundRequestId: refundRequestId,
+        status: status,
+        rejectionReason: rejectionReason,
+      );
+      if (payment != null) {
+        _replacePayment(payment);
+        _errorMessage = null;
+        notifyListeners();
+      }
+      return payment;
     } on PaymentActionException {
       rethrow;
     } finally {

@@ -64,6 +64,9 @@ function parseReservationStatus(value, createError) {
   if (normalized === "cancelled_by_user") {
     return "cancelled_by_user";
   }
+  if (normalized === "cancelled_by_company") {
+    return "cancelled_by_company";
+  }
   if (normalized === "expired") {
     return "expired";
   }
@@ -72,7 +75,24 @@ function parseReservationStatus(value, createError) {
   }
   throw createError(
       "invalid-argument",
-      "Rezervasyon durumu pending_approval, approved, rejected, cancelled_by_user, expired veya paid olmalıdır.",
+      "Rezervasyon durumu pending_approval, approved, rejected, cancelled_by_user, cancelled_by_company, expired veya paid olmalıdır.",
+  );
+}
+
+function parseRefundRequestStatus(value, createError) {
+  const normalized = normalizeTrimmedString(value).toLowerCase();
+  if (normalized === "pending") {
+    return "pending";
+  }
+  if (normalized === "approved") {
+    return "approved";
+  }
+  if (normalized === "rejected") {
+    return "rejected";
+  }
+  throw createError(
+      "invalid-argument",
+      "İade talebi durumu pending, approved veya rejected olmalıdır.",
   );
 }
 
@@ -110,6 +130,7 @@ module.exports = {
   parseApprovalStatus,
   parseIsoDate,
   parsePositiveInteger,
+  parseRefundRequestStatus,
   parseReservationStatus,
   parseTransportType,
   parseTripStatus,

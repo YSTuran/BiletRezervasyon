@@ -6,9 +6,17 @@ abstract final class PaymentPresentationHelper {
   static String statusLabel(PaymentStatus status) {
     return switch (status) {
       PaymentStatus.pending => 'Bekliyor',
-      PaymentStatus.paid => 'Odendi',
-      PaymentStatus.failed => 'Basarisiz',
+      PaymentStatus.paid => 'Ödendi',
+      PaymentStatus.failed => 'Başarısız',
       PaymentStatus.refunded => 'İade Edildi',
+    };
+  }
+
+  static String refundRequestStatusLabel(RefundRequestStatus status) {
+    return switch (status) {
+      RefundRequestStatus.pending => 'Firma Onayı Bekliyor',
+      RefundRequestStatus.approved => 'Onaylandı',
+      RefundRequestStatus.rejected => 'Reddedildi',
     };
   }
 

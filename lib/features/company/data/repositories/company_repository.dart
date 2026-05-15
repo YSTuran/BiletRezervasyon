@@ -168,7 +168,7 @@ class CompanyRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Firma kaydi bulunamadi.';
+        return 'Firma kaydı bulunamadı.';
       case 'permission-denied':
         return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':

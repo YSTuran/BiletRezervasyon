@@ -13,8 +13,9 @@ abstract final class ReservationPresentationHelper {
       ReservationStatus.approved => 'Onaylandı',
       ReservationStatus.rejected => 'Reddedildi',
       ReservationStatus.cancelledByUser => 'Kullanıcı İptal Etti',
-      ReservationStatus.expired => 'Suresi Doldu',
-      ReservationStatus.paid => 'Odendi',
+      ReservationStatus.cancelledByCompany => 'Firma İptal Etti',
+      ReservationStatus.expired => 'Süresi Doldu',
+      ReservationStatus.paid => 'Ödendi',
     };
   }
 

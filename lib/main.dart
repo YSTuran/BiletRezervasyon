@@ -15,6 +15,8 @@ import 'features/dashboard/data/repositories/dashboard_repository.dart';
 import 'features/home/presentation/screens/admin_home_screen.dart';
 import 'features/home/presentation/screens/company_officer_home_screen.dart';
 import 'features/home/presentation/screens/normal_user_home_screen.dart';
+import 'features/notification/data/repositories/notification_repository.dart';
+import 'features/notification/presentation/screens/notification_screen.dart';
 import 'features/payment/data/repositories/payment_repository.dart';
 import 'features/payment/presentation/models/payment_route_arguments.dart';
 import 'features/payment/presentation/screens/payment_checkout_screen.dart';
@@ -25,6 +27,7 @@ import 'features/reservation/presentation/models/reservation_route_arguments.dar
 import 'features/reservation/presentation/screens/reservation_list_screen.dart';
 import 'features/trip/data/repositories/trip_repository.dart';
 import 'features/trip/presentation/models/trip_route_arguments.dart';
+import 'features/trip/presentation/screens/company_trip_calendar_screen.dart';
 import 'features/trip/presentation/screens/trip_create_screen.dart';
 import 'features/trip/presentation/screens/trip_detail_screen.dart';
 import 'features/trip/presentation/screens/trip_list_screen.dart';
@@ -86,6 +89,9 @@ class MainApp extends StatelessWidget {
         ),
         Provider<ReservationRepository>(create: (_) => ReservationRepository()),
         Provider<PaymentRepository>(create: (_) => PaymentRepository()),
+        Provider<NotificationRepository>(
+          create: (_) => NotificationRepository(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -104,13 +110,16 @@ class MainApp extends StatelessWidget {
           AppRoutes.companyForm: (context) => const CompanyFormScreen(),
           AppRoutes.companyManagement: (context) =>
               const CompanyManagementScreen(),
+          AppRoutes.notifications: (context) => const NotificationScreen(),
+          AppRoutes.companyTripCalendar: (context) =>
+              const CompanyTripCalendarScreen(),
         },
         onGenerateRoute: (settings) {
           switch (settings.name) {
             case AppRoutes.tripList:
               final arguments = settings.arguments;
               if (arguments is! TripListArguments) {
-                return _buildRouteError(settings, 'Sefer listesi acilamadi.');
+                return _buildRouteError(settings, 'Sefer listesi açılamadı.');
               }
               return MaterialPageRoute<void>(
                 settings: settings,
@@ -119,7 +128,7 @@ class MainApp extends StatelessWidget {
             case AppRoutes.tripDetail:
               final arguments = settings.arguments;
               if (arguments is! TripDetailArguments) {
-                return _buildRouteError(settings, 'Sefer detayi acilamadi.');
+                return _buildRouteError(settings, 'Sefer detayı açılamadı.');
               }
               return MaterialPageRoute<void>(
                 settings: settings,
@@ -142,7 +151,7 @@ class MainApp extends StatelessWidget {
               if (arguments is! ReservationListArguments) {
                 return _buildRouteError(
                   settings,
-                  'Rezervasyon listesi acilamadi.',
+                  'Rezervasyon listesi açılamadı.',
                 );
               }
               return MaterialPageRoute<void>(
@@ -179,7 +188,7 @@ class MainApp extends StatelessWidget {
     return MaterialPageRoute<void>(
       settings: settings,
       builder: (_) => Scaffold(
-        appBar: AppBar(title: const Text('Yonlendirme Hatasi')),
+        appBar: AppBar(title: const Text('Yönlendirme Hatası')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

@@ -22,6 +22,8 @@ class Reservation {
     this.tripArrivalAt,
     this.tripTransportType,
     this.companyName,
+    this.passengerName,
+    this.passengerEmail,
   });
 
   final String id;
@@ -44,6 +46,8 @@ class Reservation {
   final DateTime? tripArrivalAt;
   final TransportType? tripTransportType;
   final String? companyName;
+  final String? passengerName;
+  final String? passengerEmail;
 
   bool get blocksSeat => status.blocksSeat;
 
@@ -71,6 +75,8 @@ class Reservation {
     DateTime? tripArrivalAt,
     TransportType? tripTransportType,
     String? companyName,
+    String? passengerName,
+    String? passengerEmail,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -93,6 +99,8 @@ class Reservation {
       tripArrivalAt: tripArrivalAt ?? this.tripArrivalAt,
       tripTransportType: tripTransportType ?? this.tripTransportType,
       companyName: companyName ?? this.companyName,
+      passengerName: passengerName ?? this.passengerName,
+      passengerEmail: passengerEmail ?? this.passengerEmail,
     );
   }
 
@@ -118,6 +126,8 @@ class Reservation {
       'trip_arrival_at': tripArrivalAt?.toIso8601String(),
       'trip_transport_type': tripTransportType?.value,
       'company_name': companyName,
+      'passenger_name': passengerName,
+      'passenger_email': passengerEmail,
     };
   }
 
@@ -155,6 +165,8 @@ class Reservation {
           ? null
           : TransportType.fromValue(json['trip_transport_type'] as String),
       companyName: json['company_name'] as String?,
+      passengerName: json['passenger_name'] as String?,
+      passengerEmail: json['passenger_email'] as String?,
     );
   }
 }

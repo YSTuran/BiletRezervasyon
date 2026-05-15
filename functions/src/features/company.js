@@ -51,7 +51,7 @@ async function upsertCompanyProfileCore({auth, data, createError}) {
   const transportType = parseTransportType(data?.transportType, createError);
 
   return withClient(
-      {createError, actionLabel: "Firma kaydi"},
+      {createError, actionLabel: "Firma kaydı"},
       async (client) => {
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
         assertAllowedRoles(appUser, ["company_officer"], createError);
@@ -199,7 +199,7 @@ async function reviewCompanyCore({auth, data, createError}) {
         );
 
         if (result.rows.length === 0) {
-          throw createError("not-found", "Firma bulunamadi.");
+          throw createError("not-found", "Firma bulunamadı.");
         }
 
         return {

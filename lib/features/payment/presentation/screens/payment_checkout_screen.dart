@@ -192,7 +192,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                               _CardNumberInputFormatter(),
                             ],
                             decoration: const InputDecoration(
-                              labelText: 'Kart Numarasi',
+                              labelText: 'Kart Numarası',
                               hintText: 'XXXX XXXX XXXX XXXX',
                               prefixIcon: Icon(Icons.credit_card_outlined),
                             ),
@@ -237,7 +237,7 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
                                   controller: _expiryYearController,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
-                                    labelText: 'Yil',
+                                    labelText: 'Yıl',
                                     prefixIcon: Icon(Icons.event_outlined),
                                   ),
                                   validator: (value) {

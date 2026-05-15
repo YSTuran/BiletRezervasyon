@@ -5,7 +5,7 @@ const envPath = path.join(__dirname, ".env.local");
 const secretPath = path.join(__dirname, ".secret.local");
 
 if (!fs.existsSync(envPath)) {
-  console.log("[sync-local-secrets] .env.local bulunamadi, atlandi.");
+  console.log("[sync-local-secrets] .env.local bulunamadı, atlandı.");
   process.exit(0);
 }
 
@@ -15,7 +15,7 @@ const secretContent = fs.existsSync(secretPath) ?
   "";
 
 if (envContent === secretContent) {
-  console.log("[sync-local-secrets] .secret.local guncel.");
+  console.log("[sync-local-secrets] .secret.local güncel.");
   process.exit(0);
 }
 

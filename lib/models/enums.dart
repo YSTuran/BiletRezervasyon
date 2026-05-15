@@ -79,6 +79,7 @@ enum ReservationStatus {
   approved,
   rejected,
   cancelledByUser,
+  cancelledByCompany,
   expired,
   paid;
 
@@ -87,6 +88,7 @@ enum ReservationStatus {
     ReservationStatus.approved => 'approved',
     ReservationStatus.rejected => 'rejected',
     ReservationStatus.cancelledByUser => 'cancelled_by_user',
+    ReservationStatus.cancelledByCompany => 'cancelled_by_company',
     ReservationStatus.expired => 'expired',
     ReservationStatus.paid => 'paid',
   };
@@ -97,6 +99,7 @@ enum ReservationStatus {
     ReservationStatus.paid => true,
     ReservationStatus.rejected => false,
     ReservationStatus.cancelledByUser => false,
+    ReservationStatus.cancelledByCompany => false,
     ReservationStatus.expired => false,
   };
 
@@ -105,9 +108,29 @@ enum ReservationStatus {
     'approved' => ReservationStatus.approved,
     'rejected' => ReservationStatus.rejected,
     'cancelled_by_user' => ReservationStatus.cancelledByUser,
+    'cancelled_by_company' => ReservationStatus.cancelledByCompany,
     'expired' => ReservationStatus.expired,
     'paid' => ReservationStatus.paid,
     _ => throw ArgumentError('Unknown ReservationStatus: $value'),
+  };
+}
+
+enum RefundRequestStatus {
+  pending,
+  approved,
+  rejected;
+
+  String get value => switch (this) {
+    RefundRequestStatus.pending => 'pending',
+    RefundRequestStatus.approved => 'approved',
+    RefundRequestStatus.rejected => 'rejected',
+  };
+
+  static RefundRequestStatus fromValue(String value) => switch (value) {
+    'pending' => RefundRequestStatus.pending,
+    'approved' => RefundRequestStatus.approved,
+    'rejected' => RefundRequestStatus.rejected,
+    _ => throw ArgumentError('Unknown RefundRequestStatus: $value'),
   };
 }
 

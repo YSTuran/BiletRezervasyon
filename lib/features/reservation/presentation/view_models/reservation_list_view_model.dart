@@ -28,7 +28,7 @@ class ReservationListViewModel extends BaseViewModel {
     UserRole.normalUser => 'Henüz bir rezervasyonunuz bulunmuyor.',
     UserRole.companyOfficer =>
       'Şirket seferleri için henüz bir rezervasyon talebi bulunmuyor.',
-    UserRole.admin => 'Gosterilecek rezervasyon bulunmuyor.',
+    UserRole.admin => 'Gösterilecek rezervasyon bulunmuyor.',
   };
 
   bool canCancel(Reservation reservation) {

@@ -83,7 +83,7 @@ class _ReservationListView extends StatelessWidget {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Rezervasyon onaylandi.')));
+      ).showSnackBar(const SnackBar(content: Text('Rezervasyon onaylandı.')));
     } on ReservationActionException catch (error) {
       if (!context.mounted) {
         return;
@@ -109,7 +109,7 @@ class _ReservationListView extends StatelessWidget {
             maxLines: 3,
             decoration: const InputDecoration(
               labelText: 'Red nedeni',
-              hintText: 'Kisa bir aciklama yazin',
+              hintText: 'Kısa bir açıklama yazın',
             ),
           ),
           actions: [
@@ -117,7 +117,7 @@ class _ReservationListView extends StatelessWidget {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Vazgec'),
+              child: const Text('Vazgeç'),
             ),
             FilledButton(
               onPressed: () {
@@ -239,9 +239,13 @@ class _ReservationListView extends StatelessWidget {
                       Text('Sefer Kodu: ${reservation.tripCode}'),
                     if (reservation.seatNumber != null)
                       Text('Koltuk: ${reservation.seatNumber}'),
+                    if ((reservation.passengerName ?? '').trim().isNotEmpty)
+                      Text('Yolcu: ${reservation.passengerName}'),
+                    if ((reservation.passengerEmail ?? '').trim().isNotEmpty)
+                      Text('E-posta: ${reservation.passengerEmail}'),
                     if (departureLabel != null) Text('Kalkış: $departureLabel'),
                     Text(
-                      'Talep Zamani: ${ReservationPresentationHelper.formatDateTime(reservation.requestedAt)}',
+                      'Talep Zamanı: ${ReservationPresentationHelper.formatDateTime(reservation.requestedAt)}',
                     ),
                     if (paymentDeadline != null)
                       Text(

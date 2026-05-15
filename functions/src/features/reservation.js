@@ -21,6 +21,7 @@ const {
   quoteIdentifier,
   resolveTripTransportTypeColumn,
 } = require("../shared/postgres");
+const {createNotification} = require("../shared/notifications");
 
 async function listReservationsCore({auth, data, createError}) {
   const resolvedAuth = resolveAuthContext({auth, data});
@@ -113,7 +114,7 @@ async function getTripReservationAvailabilityCore({auth, data, createError}) {
   }
 
   return withClient(
-      {createError, actionLabel: "Rezervasyon uygunlugu getirme"},
+      {createError, actionLabel: "Rezervasyon uygunluğu getirme"},
       async (client) => {
         await expireOverdueReservations(client);
         const appUser = await loadRequiredAppUser(client, resolvedAuth, createError);
@@ -124,7 +125,7 @@ async function getTripReservationAvailabilityCore({auth, data, createError}) {
             createError,
         );
         if (!trip) {
-          throw createError("not-found", "Sefer bulunamadi.");
+          throw createError("not-found", "Sefer bulunamadı.");
         }
 
         const transportTypeColumn = await resolveTripTransportTypeColumn(
@@ -196,7 +197,7 @@ async function createReservationCore({auth, data, createError}) {
             createError,
         );
         if (!trip) {
-          throw createError("not-found", "Sefer bulunamadi.");
+          throw createError("not-found", "Sefer bulunamadı.");
         }
         if (new Date(trip.departure_at).getTime() <= Date.now()) {
           throw createError(
@@ -285,6 +286,33 @@ async function createReservationCore({auth, data, createError}) {
             createError,
         );
 
+        const companyResult = await client.query(
+            `
+              SELECT
+                c.officer_user_id,
+                t.trip_code,
+                t.origin,
+                t.destination
+              FROM trips t
+              INNER JOIN companies c ON c.id = t.company_id
+              WHERE t.id = $1
+              LIMIT 1
+            `,
+            [tripId],
+        );
+        const companyRow = companyResult.rows[0];
+        if (companyRow?.officer_user_id) {
+          await createNotification(client, {
+            userId: companyRow.officer_user_id,
+            title: "Yeni rezervasyon talebi",
+            body:
+              `${companyRow.trip_code} kodlu ${companyRow.origin} - ${companyRow.destination} seferi için yeni bir rezervasyon talebi var.`,
+            category: "reservation_requested",
+            relatedTripId: tripId,
+            relatedReservationId: reservationId,
+          });
+        }
+
         return {
           reservation: serializeReservationRow(reservation),
         };
@@ -316,7 +344,7 @@ async function cancelReservationCore({auth, data, createError}) {
             createError,
         );
         if (!reservation) {
-          throw createError("not-found", "Rezervasyon bulunamadi.");
+          throw createError("not-found", "Rezervasyon bulunamadı.");
         }
         if (
           reservation.status !== "pending_approval" &&
@@ -396,7 +424,7 @@ async function reviewReservationCore({auth, data, createError}) {
   if (status !== "approved" && status !== "rejected") {
     throw createError(
         "invalid-argument",
-        "Rezervasyon yalnizca approved veya rejected olarak sonuclandirilebilir.",
+        "Rezervasyon yalnızca approved veya rejected olarak sonuçlandırılabilir.",
     );
   }
 
@@ -418,7 +446,7 @@ async function reviewReservationCore({auth, data, createError}) {
             createError,
         );
         if (!reservation) {
-          throw createError("not-found", "Rezervasyon bulunamadi.");
+          throw createError("not-found", "Rezervasyon bulunamadı.");
         }
         if (reservation.status !== "pending_approval") {
           throw createError(
@@ -453,12 +481,29 @@ async function reviewReservationCore({auth, data, createError}) {
             await ensurePendingPaymentForReservation(client, reservationId);
           }
 
-          return loadAccessibleReservationRow(
+          const loadedReservation = await loadAccessibleReservationRow(
               client,
               appUser,
               reservationId,
               createError,
           );
+
+          await createNotification(client, {
+            userId: loadedReservation.user_id,
+            title: status === "approved" ?
+              "Rezervasyonunuz onaylandı" :
+              "Rezervasyonunuz reddedildi",
+            body: status === "approved" ?
+              `${loadedReservation.trip_code} kodlu sefer için rezervasyonunuz onaylandı. Ödeme adımını tamamlayabilirsiniz.` :
+              `${loadedReservation.trip_code} kodlu sefer için rezervasyonunuz reddedildi. Neden: ${rejectionReason}`,
+            category: status === "approved" ?
+              "reservation_approved" :
+              "reservation_rejected",
+            relatedTripId: loadedReservation.trip_id,
+            relatedReservationId: loadedReservation.id,
+          });
+
+          return loadedReservation;
         });
 
         return {

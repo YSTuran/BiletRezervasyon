@@ -13,7 +13,7 @@ function resolveRequestedSelfServiceRole(requestedRole, createError) {
 
   const parsedRole = parseRole(requestedRole);
   if (!parsedRole) {
-    throw createError("invalid-argument", "Gecersiz rol bilgisi gonderildi.");
+    throw createError("invalid-argument", "Geçersiz rol bilgisi gönderildi.");
   }
 
   if (!SELF_SERVICE_USER_ROLES.has(parsedRole)) {

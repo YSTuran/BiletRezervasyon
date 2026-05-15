@@ -55,7 +55,7 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Firma bilgileri kaydedildi ve admin onayina gonderildi.',
+            'Firma bilgileri kaydedildi ve admin onayına gönderildi.',
           ),
         ),
       );
@@ -160,7 +160,7 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Her firma yalnizca tek bir ulasim turu ile calisir. Sonradan degistirirseniz tekrar admin onayina gider.',
+                          'Her firma yalnızca tek bir ulaşım türü ile çalışır. Sonradan değiştirirseniz tekrar admin onayına gider.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 24),
@@ -176,7 +176,7 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Firma Bilgilerini Gonder'),
+                                : const Text('Firma Bilgilerini Gönder'),
                           ),
                         ),
                       ],

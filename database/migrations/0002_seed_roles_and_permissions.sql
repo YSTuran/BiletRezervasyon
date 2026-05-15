@@ -1,21 +1,29 @@
 INSERT INTO roles (code, name, description)
 VALUES
-  ('normal_user', 'Normal Kullanici', 'Son kullanici roludur.'),
-  ('company_officer', 'Firma Gorevlisi', 'Sirket adina sefer ve rezervasyon yonetir.'),
-  ('admin', 'Admin', 'Tum onay ve sistem akislarini yonetir.')
-ON CONFLICT (code) DO NOTHING;
+  ('normal_user', 'Normal Kullanıcı', 'Son kullanıcı rolüdür.'),
+  ('company_officer', 'Firma Görevlisi', 'Şirket adına sefer ve rezervasyon yönetir.'),
+  ('admin', 'Admin', 'Tüm onay ve sistem akışlarını yönetir.')
+ON CONFLICT (code) DO UPDATE
+SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  updated_at = now();
 
 INSERT INTO permissions (code, name, description)
 VALUES
-  ('view_trips', 'Seferleri Goruntule', 'Sefer listesi ve detaylarini gorur.'),
-  ('manage_company_profile', 'Firma Profili Yonet', 'Firma kaydi olusturur ve gunceller.'),
-  ('manage_company_trips', 'Firma Seferlerini Yonet', 'Kendi seferlerini olusturur ve izler.'),
-  ('review_reservations', 'Rezervasyon Incele', 'Rezervasyon taleplerini onaylar veya reddeder.'),
-  ('review_companies', 'Firma Incele', 'Firma basvurularini onaylar veya reddeder.'),
-  ('review_trips', 'Sefer Incele', 'Seferleri onaylar veya reddeder.'),
-  ('view_admin_dashboard', 'Admin Dashboard', 'Admin dashboard verilerini gorur.'),
-  ('view_company_operations', 'Firma Operasyon Paneli', 'Firma operasyon panelini gorur.')
-ON CONFLICT (code) DO NOTHING;
+  ('view_trips', 'Seferleri Görüntüle', 'Sefer listesi ve detaylarını görür.'),
+  ('manage_company_profile', 'Firma Profili Yönet', 'Firma kaydı oluşturur ve günceller.'),
+  ('manage_company_trips', 'Firma Seferlerini Yönet', 'Kendi seferlerini oluşturur ve izler.'),
+  ('review_reservations', 'Rezervasyon İncele', 'Rezervasyon taleplerini onaylar veya reddeder.'),
+  ('review_companies', 'Firma İncele', 'Firma başvurularını onaylar veya reddeder.'),
+  ('review_trips', 'Sefer İncele', 'Seferleri onaylar veya reddeder.'),
+  ('view_admin_dashboard', 'Admin Paneli', 'Admin paneli verilerini görür.'),
+  ('view_company_operations', 'Firma Operasyon Paneli', 'Firma operasyon panelini görür.')
+ON CONFLICT (code) DO UPDATE
+SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  updated_at = now();
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id

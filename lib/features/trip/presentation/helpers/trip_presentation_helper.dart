@@ -174,4 +174,30 @@ abstract final class TripPresentationHelper {
     final minutes = duration.inMinutes.remainder(60);
     return '${hours}sa ${minutes}dk';
   }
+
+  static String formatDepartureCountdown(
+    DateTime departureAt, {
+    DateTime? now,
+  }) {
+    final referenceTime = now ?? DateTime.now();
+    final remaining = departureAt.difference(referenceTime);
+    if (remaining.isNegative) {
+      return 'Kalkış başladı';
+    }
+
+    final days = remaining.inDays;
+    final hours = remaining.inHours.remainder(24);
+    final minutes = remaining.inMinutes.remainder(60);
+
+    if (days > 0) {
+      return 'Kalkışa $days gün $hours saat kaldı';
+    }
+    if (hours > 0) {
+      return 'Kalkışa $hours saat $minutes dakika kaldı';
+    }
+    if (minutes > 0) {
+      return 'Kalkışa $minutes dakika kaldı';
+    }
+    return 'Kalkış çok yakında';
+  }
 }

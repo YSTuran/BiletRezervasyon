@@ -147,7 +147,7 @@ class ReservationRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Rezervasyon bulunamadi.';
+        return 'Rezervasyon bulunamadı.';
       case 'already-exists':
         return trimmedMessage.isNotEmpty
             ? trimmedMessage

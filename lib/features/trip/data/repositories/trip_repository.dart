@@ -155,6 +155,25 @@ class TripRepository {
     );
   }
 
+  Future<Trip?> cancelTrip({
+    required String tripId,
+    String? cancellationReason,
+  }) async {
+    try {
+      final response = await PostgresCallableService.call(
+        functionName: 'cancelTrip',
+        data: {
+          'tripId': tripId,
+          if ((cancellationReason ?? '').trim().isNotEmpty)
+            'cancellationReason': cancellationReason!.trim(),
+        },
+      );
+      return _parseTrip(response['trip']);
+    } on FirebaseFunctionsException catch (error) {
+      throw TripActionException(_mapTripError(error.code, error.message));
+    }
+  }
+
   Future<Trip?> _reviewTrip({
     required String tripId,
     required TripStatus status,
@@ -213,7 +232,7 @@ class TripRepository {
 
     switch (code) {
       case 'not-found':
-        return 'Sefer bulunamadi.';
+        return 'Sefer bulunamadı.';
       case 'permission-denied':
         return 'Bu işlem için yeterli yetkiniz bulunmuyor.';
       case 'unavailable':

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
 import '../../../../models/enums.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../notification/presentation/widgets/notification_bell_button.dart';
 import '../../../payment/presentation/models/payment_route_arguments.dart';
 import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
@@ -34,7 +35,10 @@ class _RoleHomeView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      appBar: AppBar(title: Text(viewModel.appBarTitle)),
+      appBar: AppBar(
+        title: Text(viewModel.appBarTitle),
+        actions: const [NotificationBellButton()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

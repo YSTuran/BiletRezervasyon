@@ -12,6 +12,8 @@ import '../../../dashboard/domain/models/company_operations_dashboard.dart';
 import '../../../dashboard/presentation/view_models/company_operations_dashboard_view_model.dart';
 import '../../../dashboard/presentation/widgets/dashboard_metric_card.dart';
 import '../../../dashboard/presentation/widgets/dashboard_section_card.dart';
+import '../../../notification/presentation/widgets/notification_bell_button.dart';
+import '../../../payment/presentation/models/payment_route_arguments.dart';
 import '../../../reservation/presentation/helpers/reservation_presentation_helper.dart';
 import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/helpers/trip_presentation_helper.dart';
@@ -413,6 +415,15 @@ class _CompanyOperationsHomeViewState
               },
             ),
             HomeNavigationItem(
+              icon: Icons.calendar_month_outlined,
+              title: 'Sefer Takvimi',
+              subtitle: 'Seferleri tarihe göre planlayın',
+              colors: const [Color(0xFF8360C3), Color(0xFF2EBF91)],
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.companyTripCalendar);
+              },
+            ),
+            HomeNavigationItem(
               icon: Icons.fact_check_outlined,
               title: 'Rezervasyon Talepleri',
               subtitle: 'Bekleyen yolcu taleplerini inceleyin',
@@ -421,6 +432,20 @@ class _CompanyOperationsHomeViewState
                 Navigator.of(context).pushNamed(
                   AppRoutes.reservationList,
                   arguments: const ReservationListArguments(
+                    role: UserRole.companyOfficer,
+                  ),
+                );
+              },
+            ),
+            HomeNavigationItem(
+              icon: Icons.assignment_return_outlined,
+              title: 'İade Talepleri',
+              subtitle: 'Ödeme ve iade süreçlerini yönetin',
+              colors: const [Color(0xFFFC5C7D), Color(0xFF6A82FB)],
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.paymentList,
+                  arguments: const PaymentListArguments(
                     role: UserRole.companyOfficer,
                   ),
                 );
@@ -454,7 +479,10 @@ class _CompanyOperationsHomeViewState
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      appBar: AppBar(title: const Text('Firma Operasyon Paneli')),
+      appBar: AppBar(
+        title: const Text('Firma Operasyon Paneli'),
+        actions: const [NotificationBellButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(

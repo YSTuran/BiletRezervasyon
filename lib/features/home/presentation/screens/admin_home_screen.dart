@@ -10,6 +10,7 @@ import '../../../dashboard/domain/models/admin_dashboard.dart';
 import '../../../dashboard/presentation/view_models/admin_dashboard_view_model.dart';
 import '../../../dashboard/presentation/widgets/dashboard_metric_card.dart';
 import '../../../dashboard/presentation/widgets/dashboard_section_card.dart';
+import '../../../notification/presentation/widgets/notification_bell_button.dart';
 import '../../../reservation/presentation/models/reservation_route_arguments.dart';
 import '../../../trip/presentation/helpers/trip_presentation_helper.dart';
 import '../../../trip/presentation/models/trip_route_arguments.dart';
@@ -428,7 +429,10 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      appBar: AppBar(title: const Text('Admin Paneli')),
+      appBar: AppBar(
+        title: const Text('Admin Paneli'),
+        actions: const [NotificationBellButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
