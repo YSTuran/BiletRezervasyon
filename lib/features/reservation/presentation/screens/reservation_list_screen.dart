@@ -34,6 +34,7 @@ class _ReservationListView extends StatelessWidget {
     BuildContext context,
     Reservation reservation,
   ) async {
+    final viewModel = context.read<ReservationListViewModel>();
     final result = await Navigator.of(context).pushNamed(
       AppRoutes.paymentCheckout,
       arguments: PaymentCheckoutArguments(reservationId: reservation.id),
@@ -43,30 +44,29 @@ class _ReservationListView extends StatelessWidget {
       return;
     }
 
-    await context.read<ReservationListViewModel>().load();
+    await viewModel.load();
   }
 
   Future<void> _cancelReservation(
     BuildContext context,
     Reservation reservation,
   ) async {
+    final viewModel = context.read<ReservationListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
-      await context.read<ReservationListViewModel>().cancelReservation(
-        reservation.id,
-      );
+      await viewModel.cancelReservation(reservation.id);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Rezervasyon iptal edildi.')),
       );
     } on ReservationActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -74,23 +74,22 @@ class _ReservationListView extends StatelessWidget {
     BuildContext context,
     Reservation reservation,
   ) async {
+    final viewModel = context.read<ReservationListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
-      await context.read<ReservationListViewModel>().approveReservation(
-        reservation.id,
-      );
+      await viewModel.approveReservation(reservation.id);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Rezervasyon onaylandı.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Rezervasyon onaylandı.')),
+      );
     } on ReservationActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -98,67 +97,41 @@ class _ReservationListView extends StatelessWidget {
     BuildContext context,
     Reservation reservation,
   ) async {
-    final reasonController = TextEditingController();
+    final viewModel = context.read<ReservationListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
     final rejectionReason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Rezervasyonu Reddet'),
-          content: TextField(
-            controller: reasonController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Red nedeni',
-              hintText: 'Kısa bir açıklama yazın',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(reasonController.text.trim());
-              },
-              child: const Text('Reddet'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => const _ReservationRejectDialog(),
     );
-    reasonController.dispose();
 
     if (!context.mounted || rejectionReason == null) {
       return;
     }
 
     try {
-      await context.read<ReservationListViewModel>().rejectReservation(
+      await viewModel.rejectReservation(
         reservationId: reservation.id,
         rejectionReason: rejectionReason,
       );
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Rezervasyon reddedildi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Rezervasyon reddedildi.')),
+      );
     } on ReservationActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ReservationListViewModel>();
+    final screenContext = context;
 
     Widget body;
     if (viewModel.isBusy && viewModel.reservations.isEmpty) {
@@ -277,7 +250,7 @@ class _ReservationListView extends StatelessWidget {
                                     ? null
                                     : () {
                                         _cancelReservation(
-                                          context,
+                                          screenContext,
                                           reservation,
                                         );
                                       },
@@ -293,7 +266,10 @@ class _ReservationListView extends StatelessWidget {
                                 onPressed: viewModel.isBusy
                                     ? null
                                     : () {
-                                        _openPayment(context, reservation);
+                                        _openPayment(
+                                          screenContext,
+                                          reservation,
+                                        );
                                       },
                                 icon: const Icon(Icons.payments_outlined),
                                 label: const Text('Ödeme Yap'),
@@ -307,7 +283,7 @@ class _ReservationListView extends StatelessWidget {
                                     ? null
                                     : () {
                                         _approveReservation(
-                                          context,
+                                          screenContext,
                                           reservation,
                                         );
                                       },
@@ -322,7 +298,7 @@ class _ReservationListView extends StatelessWidget {
                                     ? null
                                     : () {
                                         _rejectReservation(
-                                          context,
+                                          screenContext,
                                           reservation,
                                         );
                                       },
@@ -346,6 +322,53 @@ class _ReservationListView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(viewModel.title)),
       body: body,
+    );
+  }
+}
+
+class _ReservationRejectDialog extends StatefulWidget {
+  const _ReservationRejectDialog();
+
+  @override
+  State<_ReservationRejectDialog> createState() =>
+      _ReservationRejectDialogState();
+}
+
+class _ReservationRejectDialogState extends State<_ReservationRejectDialog> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Rezervasyonu Reddet'),
+      content: TextField(
+        controller: _reasonController,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          labelText: 'Red nedeni',
+          hintText: 'Kısa bir açıklama yazın',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(_reasonController.text.trim());
+          },
+          child: const Text('Reddet'),
+        ),
+      ],
     );
   }
 }

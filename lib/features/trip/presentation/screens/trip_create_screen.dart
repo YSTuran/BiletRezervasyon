@@ -331,7 +331,7 @@ class _TripCreateViewState extends State<_TripCreateView> {
                                 });
                               },
                         validator: (value) {
-                          return value == null ? 'Kapasite secin' : null;
+                          return value == null ? 'Kapasite seçin' : null;
                         },
                       ),
                       const SizedBox(height: 16),

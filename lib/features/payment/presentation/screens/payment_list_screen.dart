@@ -125,24 +125,22 @@ class _PaymentListView extends StatelessWidget {
     if (refundRequestId == null) {
       return;
     }
+    final viewModel = context.read<PaymentListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await context.read<PaymentListViewModel>().approveRefundRequest(
-        refundRequestId,
-      );
+      await viewModel.approveRefundRequest(refundRequestId);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('İade talebi onaylandı.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('İade talebi onaylandı.')),
+      );
     } on PaymentActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -151,68 +149,41 @@ class _PaymentListView extends StatelessWidget {
     if (refundRequestId == null) {
       return;
     }
+    final viewModel = context.read<PaymentListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    final reasonController = TextEditingController();
     final rejectionReason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('İade Talebini Reddet'),
-          content: TextField(
-            controller: reasonController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Red nedeni',
-              hintText: 'Kısa bir açıklama yazın',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(reasonController.text.trim());
-              },
-              child: const Text('Reddet'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => const _RefundRejectDialog(),
     );
-    reasonController.dispose();
 
     if (!context.mounted || rejectionReason == null) {
       return;
     }
 
     try {
-      await context.read<PaymentListViewModel>().rejectRefundRequest(
+      await viewModel.rejectRefundRequest(
         refundRequestId: refundRequestId,
         rejectionReason: rejectionReason,
       );
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('İade talebi reddedildi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('İade talebi reddedildi.')),
+      );
     } on PaymentActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<PaymentListViewModel>();
+    final screenContext = context;
 
     Widget body;
     if (viewModel.isBusy && viewModel.payments.isEmpty) {
@@ -341,7 +312,7 @@ class _PaymentListView extends StatelessWidget {
                         onPressed: viewModel.isBusy
                             ? null
                             : () {
-                                _openCheckout(context, payment);
+                                _openCheckout(screenContext, payment);
                               },
                         icon: const Icon(Icons.credit_card_outlined),
                         label: Text(
@@ -357,7 +328,7 @@ class _PaymentListView extends StatelessWidget {
                         onPressed: viewModel.isBusy
                             ? null
                             : () {
-                                _requestRefund(context, payment);
+                                _requestRefund(screenContext, payment);
                               },
                         icon: const Icon(Icons.assignment_return_outlined),
                         label: const Text('İade Talep Et'),
@@ -372,7 +343,7 @@ class _PaymentListView extends StatelessWidget {
                               onPressed: viewModel.isBusy
                                   ? null
                                   : () {
-                                      _approveRefund(context, payment);
+                                      _approveRefund(screenContext, payment);
                                     },
                               icon: const Icon(Icons.check_circle_outline),
                               label: const Text('İadeyi Onayla'),
@@ -384,7 +355,7 @@ class _PaymentListView extends StatelessWidget {
                               onPressed: viewModel.isBusy
                                   ? null
                                   : () {
-                                      _rejectRefund(context, payment);
+                                      _rejectRefund(screenContext, payment);
                                     },
                               icon: const Icon(Icons.cancel_outlined),
                               label: const Text('Reddet'),
@@ -405,6 +376,52 @@ class _PaymentListView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(viewModel.title)),
       body: body,
+    );
+  }
+}
+
+class _RefundRejectDialog extends StatefulWidget {
+  const _RefundRejectDialog();
+
+  @override
+  State<_RefundRejectDialog> createState() => _RefundRejectDialogState();
+}
+
+class _RefundRejectDialogState extends State<_RefundRejectDialog> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('İade Talebini Reddet'),
+      content: TextField(
+        controller: _reasonController,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          labelText: 'Red nedeni',
+          hintText: 'Kısa bir açıklama yazın',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(_reasonController.text.trim());
+          },
+          child: const Text('Reddet'),
+        ),
+      ],
     );
   }
 }

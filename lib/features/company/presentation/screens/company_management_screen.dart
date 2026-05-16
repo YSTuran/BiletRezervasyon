@@ -25,93 +25,67 @@ class _CompanyManagementView extends StatelessWidget {
   const _CompanyManagementView();
 
   Future<void> _approveCompany(BuildContext context, Company company) async {
+    final viewModel = context.read<CompanyListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
-      await context.read<CompanyListViewModel>().approveCompany(company.id);
+      await viewModel.approveCompany(company.id);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${company.name} onaylandı.')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('${company.name} onaylandı.')),
+      );
     } catch (_) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Firma onaylanamadı.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Firma onaylanamadı.')),
+      );
     }
   }
 
   Future<void> _rejectCompany(BuildContext context, Company company) async {
-    final reasonController = TextEditingController();
+    final viewModel = context.read<CompanyListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
     final reason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('${company.name} firmasini reddet'),
-          content: TextField(
-            controller: reasonController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Red nedeni',
-              hintText: 'Kısa bir açıklama yazın',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(reasonController.text.trim());
-              },
-              child: const Text('Reddet'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => _CompanyRejectDialog(companyName: company.name),
     );
-    reasonController.dispose();
 
     if (!context.mounted || reason == null) {
       return;
     }
 
     try {
-      await context.read<CompanyListViewModel>().rejectCompany(
-        company.id,
-        reason,
-      );
+      await viewModel.rejectCompany(company.id, reason);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${company.name} reddedildi.')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('${company.name} reddedildi.')),
+      );
     } on CompanyReviewException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Firma reddedilemedi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Firma reddedilemedi.')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<CompanyListViewModel>();
+    final screenContext = context;
 
     Widget body;
     if (viewModel.isBusy && viewModel.companies.isEmpty) {
@@ -176,7 +150,7 @@ class _CompanyManagementView extends StatelessWidget {
                               onPressed: viewModel.isBusy
                                   ? null
                                   : () {
-                                      _approveCompany(context, company);
+                                      _approveCompany(screenContext, company);
                                     },
                               icon: const Icon(Icons.check_circle_outline),
                               label: const Text('Onayla'),
@@ -188,7 +162,7 @@ class _CompanyManagementView extends StatelessWidget {
                               onPressed: viewModel.isBusy
                                   ? null
                                   : () {
-                                      _rejectCompany(context, company);
+                                      _rejectCompany(screenContext, company);
                                     },
                               icon: const Icon(Icons.cancel_outlined),
                               label: const Text('Reddet'),
@@ -249,6 +223,54 @@ class _CompanyManagementView extends StatelessWidget {
           Expanded(child: body),
         ],
       ),
+    );
+  }
+}
+
+class _CompanyRejectDialog extends StatefulWidget {
+  const _CompanyRejectDialog({required this.companyName});
+
+  final String companyName;
+
+  @override
+  State<_CompanyRejectDialog> createState() => _CompanyRejectDialogState();
+}
+
+class _CompanyRejectDialogState extends State<_CompanyRejectDialog> {
+  final _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('${widget.companyName} firmasını reddet'),
+      content: TextField(
+        controller: _reasonController,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          labelText: 'Red nedeni',
+          hintText: 'Kısa bir açıklama yazın',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(_reasonController.text.trim());
+          },
+          child: const Text('Reddet'),
+        ),
+      ],
     );
   }
 }
