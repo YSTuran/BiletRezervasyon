@@ -182,8 +182,33 @@ DateTime _readDate(dynamic value) {
   if (value is DateTime) {
     return value;
   }
+  if (value is int) {
+    return _readDateFromEpoch(value);
+  }
+  if (value is num) {
+    return _readDateFromEpoch(value.toInt());
+  }
+  if (value is Map) {
+    final seconds = value['_seconds'] ?? value['seconds'];
+    final nanoseconds = value['_nanoseconds'] ?? value['nanoseconds'] ?? 0;
+    if (seconds is num) {
+      return DateTime.fromMillisecondsSinceEpoch(
+        (seconds * 1000).round() +
+            (nanoseconds is num ? nanoseconds ~/ 1000000 : 0),
+        isUtc: true,
+      );
+    }
+  }
   final text = value?.toString().trim() ?? '';
   return DateTime.tryParse(text) ?? DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+DateTime _readDateFromEpoch(int value) {
+  final isMilliseconds = value.abs() > 9999999999;
+  return DateTime.fromMillisecondsSinceEpoch(
+    isMilliseconds ? value : value * 1000,
+    isUtc: true,
+  );
 }
 
 TripStatus _readTripStatus(dynamic value) {

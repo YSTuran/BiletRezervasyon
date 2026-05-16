@@ -35,7 +35,9 @@ class _ReservationListView extends StatelessWidget {
     Reservation reservation,
   ) async {
     final viewModel = context.read<ReservationListViewModel>();
-    final result = await Navigator.of(context).pushNamed(
+    final navigator = Navigator.of(context);
+
+    final result = await navigator.pushNamed(
       AppRoutes.paymentCheckout,
       arguments: PaymentCheckoutArguments(reservationId: reservation.id),
     );

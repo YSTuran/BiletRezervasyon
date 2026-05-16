@@ -62,6 +62,8 @@ class _ProfileViewState extends State<_ProfileView> {
 
   Future<void> _logout(BuildContext context) async {
     final viewModel = context.read<ProfileViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
       final route = await viewModel.logout();
@@ -69,23 +71,21 @@ class _ProfileViewState extends State<_ProfileView> {
         return;
       }
 
-      Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+      navigator.pushNamedAndRemoveUntil(route, (route) => false);
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Çıkış yapılamadı.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Çıkış yapılamadı.')),
+      );
     }
   }
 
@@ -93,24 +93,22 @@ class _ProfileViewState extends State<_ProfileView> {
     if (!_nameFormKey.currentState!.validate()) {
       return;
     }
+    final viewModel = context.read<ProfileViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await context.read<ProfileViewModel>().updateFullName(
-        _nameController.text,
-      );
+      await viewModel.updateFullName(_nameController.text);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ad-soyad güncellendi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Ad-soyad güncellendi.')),
+      );
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -118,9 +116,11 @@ class _ProfileViewState extends State<_ProfileView> {
     if (!_passwordFormKey.currentState!.validate()) {
       return;
     }
+    final viewModel = context.read<ProfileViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await context.read<ProfileViewModel>().changePassword(
+      await viewModel.changePassword(
         currentPassword: _currentPasswordController.text,
         newPassword: _newPasswordController.text,
       );
@@ -130,23 +130,24 @@ class _ProfileViewState extends State<_ProfileView> {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Şifre güncellendi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Şifre güncellendi.')),
+      );
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
   Future<void> _deleteAccount(BuildContext context) async {
+    final viewModel = context.read<ProfileViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     final password = _deletePasswordController.text;
     if (password.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Hesabı silmek için şifrenizi girin.')),
       );
       return;
@@ -183,20 +184,16 @@ class _ProfileViewState extends State<_ProfileView> {
     }
 
     try {
-      final route = await context.read<ProfileViewModel>().deleteAccount(
-        currentPassword: password,
-      );
+      final route = await viewModel.deleteAccount(currentPassword: password);
       if (!context.mounted || route == null) {
         return;
       }
-      Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+      navigator.pushNamedAndRemoveUntil(route, (route) => false);
     } on UserMessageException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

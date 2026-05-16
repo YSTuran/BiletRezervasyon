@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +10,6 @@ import '../../domain/models/trip.dart';
 import '../helpers/trip_presentation_helper.dart';
 import '../models/trip_route_arguments.dart';
 import '../view_models/trip_list_view_model.dart';
-import '../widgets/departure_countdown_chip.dart';
 
 class CompanyTripCalendarScreen extends StatelessWidget {
   const CompanyTripCalendarScreen({super.key});
@@ -27,6 +28,27 @@ class CompanyTripCalendarScreen extends StatelessWidget {
 
 class _CompanyTripCalendarView extends StatelessWidget {
   const _CompanyTripCalendarView();
+
+  Future<void> _openTripDetail(
+    BuildContext context,
+    TripListViewModel viewModel,
+    Trip trip,
+  ) async {
+    final navigator = Navigator.of(context);
+
+    await navigator.pushNamed(
+      AppRoutes.tripDetail,
+      arguments: TripDetailArguments(
+        role: UserRole.companyOfficer,
+        tripId: trip.id,
+      ),
+    );
+    if (!context.mounted) {
+      return;
+    }
+
+    await viewModel.load();
+  }
 
   Map<DateTime, List<Trip>> _groupTripsByDay(List<Trip> trips) {
     final grouped = <DateTime, List<Trip>>{};
@@ -52,7 +74,10 @@ class _CompanyTripCalendarView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripListViewModel>();
-    final groupedTrips = _groupTripsByDay(viewModel.trips);
+    final calendarTrips = viewModel.trips
+        .where((trip) => trip.status == TripStatus.approved)
+        .toList();
+    final groupedTrips = _groupTripsByDay(calendarTrips);
 
     Widget body;
     if (viewModel.isBusy && viewModel.trips.isEmpty) {
@@ -78,7 +103,7 @@ class _CompanyTripCalendarView extends StatelessWidget {
       body = const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Text('Takvimde gösterilecek sefer bulunmuyor.'),
+          child: Text('Takvimde gösterilecek onaylı sefer bulunmuyor.'),
         ),
       );
     } else {
@@ -98,7 +123,12 @@ class _CompanyTripCalendarView extends StatelessWidget {
               for (final trip in entry.value)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _CalendarTripCard(trip: trip),
+                  child: _CalendarTripCard(
+                    trip: trip,
+                    onTap: () {
+                      _openTripDetail(context, viewModel, trip);
+                    },
+                  ),
                 ),
               const SizedBox(height: 8),
             ],
@@ -114,26 +144,45 @@ class _CompanyTripCalendarView extends StatelessWidget {
   }
 }
 
-class _CalendarTripCard extends StatelessWidget {
-  const _CalendarTripCard({required this.trip});
+class _CalendarTripCard extends StatefulWidget {
+  const _CalendarTripCard({required this.trip, required this.onTap});
 
   final Trip trip;
+  final VoidCallback onTap;
+
+  @override
+  State<_CalendarTripCard> createState() => _CalendarTripCardState();
+}
+
+class _CalendarTripCardState extends State<_CalendarTripCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final style = TripPresentationHelper.visualStyle(trip);
+    final now = DateTime.now();
+    final trip = widget.trip;
+    final style = TripPresentationHelper.visualStyle(trip, now: now);
+
     return Card(
       color: style.backgroundColor,
       child: ListTile(
-        onTap: () {
-          Navigator.of(context).pushNamed(
-            AppRoutes.tripDetail,
-            arguments: TripDetailArguments(
-              role: UserRole.companyOfficer,
-              tripId: trip.id,
-            ),
-          );
-        },
+        onTap: widget.onTap,
         title: Text(
           '${trip.origin} -> ${trip.destination}',
           style: TextStyle(
@@ -150,11 +199,10 @@ class _CalendarTripCard extends StatelessWidget {
               Text(
                 'Saat: ${TripPresentationHelper.formatDateTime(trip.departureAt)}',
               ),
-              Text('Durum: ${TripPresentationHelper.statusLabel(trip.status)}'),
               const SizedBox(height: 6),
-              DepartureCountdownChip(
-                departureAt: trip.departureAt,
-                compact: true,
+              Chip(
+                avatar: Icon(_statusIcon(trip, now), size: 18),
+                label: Text(_statusLabel(trip, now)),
               ),
             ],
           ),
@@ -162,5 +210,43 @@ class _CalendarTripCard extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
       ),
     );
+  }
+
+  IconData _statusIcon(Trip trip, DateTime now) {
+    if (now.isBefore(trip.departureAt)) {
+      return Icons.schedule_outlined;
+    }
+    if (now.isBefore(trip.arrivalAt)) {
+      return Icons.local_shipping_outlined;
+    }
+    return Icons.check_circle_outline;
+  }
+
+  String _statusLabel(Trip trip, DateTime now) {
+    if (now.isBefore(trip.departureAt)) {
+      return 'Kalkışa ${_formatRemainingTime(trip.departureAt.difference(now))} kaldı';
+    }
+    if (now.isBefore(trip.arrivalAt)) {
+      return 'Yolda';
+    }
+    return 'Vardı';
+  }
+
+  String _formatRemainingTime(Duration duration) {
+    final days = duration.inDays;
+    final hours = duration.inHours;
+    final remainingHours = duration.inHours.remainder(24);
+    final minutes = duration.inMinutes.remainder(60);
+
+    if (days > 0) {
+      return '$days gün $remainingHours saat';
+    }
+    if (hours > 0) {
+      return '$hours saat $minutes dakika';
+    }
+    if (minutes > 0) {
+      return '$minutes dakika';
+    }
+    return 'çok az süre';
   }
 }

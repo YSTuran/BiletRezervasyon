@@ -55,6 +55,9 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
     }
 
     final viewModel = context.read<PaymentCheckoutViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     try {
       final result = await viewModel.submitFakePayment(
         cardHolderName: _cardHolderController.text,
@@ -70,20 +73,16 @@ class _PaymentCheckoutViewState extends State<_PaymentCheckoutView> {
       final message = result.succeeded
           ? 'Ödeme başarıyla tamamlandı.'
           : 'Ödeme başarısız oldu. Başka bir test kartı deneyin.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      messenger.showSnackBar(SnackBar(content: Text(message)));
 
       if (result.succeeded) {
-        Navigator.of(context).pop(true);
+        navigator.pop(true);
       }
     } on PaymentActionException catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

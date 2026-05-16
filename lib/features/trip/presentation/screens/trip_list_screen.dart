@@ -48,46 +48,55 @@ class _TripListViewState extends State<_TripListView> {
   }
 
   Future<void> _openTripDetails(String tripId) async {
-    await Navigator.of(context).pushNamed(
+    final viewModel = _viewModel;
+    final navigator = Navigator.of(context);
+
+    await navigator.pushNamed(
       AppRoutes.tripDetail,
-      arguments: TripDetailArguments(role: _viewModel.role, tripId: tripId),
+      arguments: TripDetailArguments(role: viewModel.role, tripId: tripId),
     );
 
     if (!mounted) {
       return;
     }
 
-    await _viewModel.load();
+    await viewModel.load();
   }
 
   Future<void> _openTripCreate() async {
-    final result = await Navigator.of(context).pushNamed(
+    final viewModel = _viewModel;
+    final navigator = Navigator.of(context);
+
+    final result = await navigator.pushNamed(
       AppRoutes.tripCreate,
-      arguments: TripCreateArguments(role: _viewModel.role),
+      arguments: TripCreateArguments(role: viewModel.role),
     );
 
     if (!mounted || result is! String) {
       return;
     }
 
-    await _viewModel.load();
+    await viewModel.load();
     if (!mounted) {
       return;
     }
 
-    await Navigator.of(context).pushNamed(
+    await navigator.pushNamed(
       AppRoutes.tripDetail,
-      arguments: TripDetailArguments(role: _viewModel.role, tripId: result),
+      arguments: TripDetailArguments(role: viewModel.role, tripId: result),
     );
   }
 
   Future<void> _openCompanyForm() async {
-    await Navigator.of(context).pushNamed(AppRoutes.companyForm);
+    final viewModel = _viewModel;
+    final navigator = Navigator.of(context);
+
+    await navigator.pushNamed(AppRoutes.companyForm);
     if (!mounted) {
       return;
     }
 
-    await _viewModel.load();
+    await viewModel.load();
   }
 
   Future<void> _pickDepartureDate() async {

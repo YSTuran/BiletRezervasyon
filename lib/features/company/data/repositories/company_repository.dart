@@ -54,7 +54,7 @@ class CompanyRepository {
   }) async {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
-      throw const CompanyActionException('Firma adi zorunludur.');
+      throw const CompanyActionException('Firma adı zorunludur.');
     }
 
     try {

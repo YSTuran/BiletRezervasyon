@@ -9,7 +9,7 @@ class HomeViewModel {
   final AuthRepository _authRepository;
 
   String get appBarTitle => switch (role) {
-    UserRole.normalUser => 'Normal Kullanıcı Ana Sayfa',
+    UserRole.normalUser => 'Ana Sayfa',
     UserRole.companyOfficer => 'Firma Görevlisi Ana Sayfa',
     UserRole.admin => 'Admin Ana Sayfa',
   };

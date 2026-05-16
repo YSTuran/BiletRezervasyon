@@ -32,42 +32,68 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   String? _seededCompanyId;
+  CompanyFormViewModel? _attachedViewModel;
 
   CompanyFormViewModel get _viewModel => context.read<CompanyFormViewModel>();
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final viewModel = _viewModel;
+    if (_attachedViewModel == viewModel) {
+      return;
+    }
+
+    _attachedViewModel?.removeListener(_syncCompanyName);
+    _attachedViewModel = viewModel..addListener(_syncCompanyName);
+    _syncCompanyName();
+  }
+
+  @override
   void dispose() {
+    _attachedViewModel?.removeListener(_syncCompanyName);
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _syncCompanyName() {
+    final company = _attachedViewModel?.company;
+    if (_seededCompanyId == company?.id) {
+      return;
+    }
+
+    _seededCompanyId = company?.id;
+    _nameController.text = company?.name ?? '';
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    final viewModel = _viewModel;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
-      final company = await _viewModel.saveCompany(_nameController.text);
+      final company = await viewModel.saveCompany(_nameController.text);
       if (!mounted || company == null) {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text(
             'Firma bilgileri kaydedildi ve admin onayına gönderildi.',
           ),
         ),
       );
-      Navigator.of(context).pop(true);
+      navigator.pop(true);
     } on CompanyFormException catch (error) {
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -75,11 +101,6 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<CompanyFormViewModel>();
     final company = viewModel.company;
-
-    if (_seededCompanyId != company?.id) {
-      _seededCompanyId = company?.id;
-      _nameController.text = company?.name ?? '';
-    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Firma Bilgileri')),
@@ -123,18 +144,19 @@ class _CompanyFormViewState extends State<_CompanyFormView> {
                         TextFormField(
                           controller: _nameController,
                           decoration: const InputDecoration(
-                            labelText: 'Firma Adi',
+                            labelText: 'Firma Adı',
                             prefixIcon: Icon(Icons.apartment_outlined),
                           ),
                           validator: (value) {
                             if ((value ?? '').trim().isEmpty) {
-                              return 'Firma adi zorunludur';
+                              return 'Firma adı zorunludur';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<TransportType>(
+                          key: ValueKey(viewModel.transportType),
                           initialValue: viewModel.transportType,
                           decoration: const InputDecoration(
                             labelText: 'Ulaşım Türü',

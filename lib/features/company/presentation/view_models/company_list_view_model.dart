@@ -20,7 +20,7 @@ class CompanyListViewModel extends BaseViewModel {
 
   String get emptyMessage => switch (_selectedStatus) {
     ApprovalStatus.pending => 'Onay bekleyen firma bulunmuyor.',
-    ApprovalStatus.approved => 'Onaylanmis firma bulunmuyor.',
+    ApprovalStatus.approved => 'Onaylanmış firma bulunmuyor.',
     ApprovalStatus.rejected => 'Reddedilen firmalar listelenmiyor.',
   };
 
@@ -29,6 +29,8 @@ class CompanyListViewModel extends BaseViewModel {
       return;
     }
     _selectedStatus = status;
+    _companies = const [];
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -58,8 +60,12 @@ class CompanyListViewModel extends BaseViewModel {
     setBusy(true);
     try {
       _errorMessage = null;
-      await _repository.approveCompany(companyId);
-      _companies = await _repository.fetchCompanies(status: _selectedStatus);
+      final updatedCompany = await _repository.approveCompany(companyId);
+      if (updatedCompany == null) {
+        _companies = await _repository.fetchCompanies(status: _selectedStatus);
+      } else {
+        _applyCompanyUpdate(updatedCompany);
+      }
       notifyListeners();
     } catch (_) {
       _errorMessage = 'Firma onaylanamadı.';
@@ -83,11 +89,15 @@ class CompanyListViewModel extends BaseViewModel {
     setBusy(true);
     try {
       _errorMessage = null;
-      await _repository.rejectCompany(
+      final updatedCompany = await _repository.rejectCompany(
         companyId: companyId,
         rejectionReason: trimmedReason,
       );
-      _companies = await _repository.fetchCompanies(status: _selectedStatus);
+      if (updatedCompany == null) {
+        _companies = await _repository.fetchCompanies(status: _selectedStatus);
+      } else {
+        _applyCompanyUpdate(updatedCompany);
+      }
       notifyListeners();
     } catch (_) {
       _errorMessage = 'Firma reddedilemedi.';
@@ -96,6 +106,31 @@ class CompanyListViewModel extends BaseViewModel {
     } finally {
       setBusy(false);
     }
+  }
+
+  void _applyCompanyUpdate(Company updatedCompany) {
+    final index = _companies.indexWhere(
+      (company) => company.id == updatedCompany.id,
+    );
+    final belongsToSelectedList = updatedCompany.status == _selectedStatus;
+
+    if (!belongsToSelectedList) {
+      if (index == -1) {
+        return;
+      }
+      final nextCompanies = [..._companies]..removeAt(index);
+      _companies = nextCompanies;
+      return;
+    }
+
+    if (index == -1) {
+      _companies = [updatedCompany, ..._companies];
+      return;
+    }
+
+    final nextCompanies = [..._companies];
+    nextCompanies[index] = updatedCompany;
+    _companies = nextCompanies;
   }
 }
 

@@ -30,7 +30,10 @@ class _PaymentListView extends StatelessWidget {
   const _PaymentListView();
 
   Future<void> _openCheckout(BuildContext context, Payment payment) async {
-    final result = await Navigator.of(context).pushNamed(
+    final viewModel = context.read<PaymentListViewModel>();
+    final navigator = Navigator.of(context);
+
+    final result = await navigator.pushNamed(
       AppRoutes.paymentCheckout,
       arguments: PaymentCheckoutArguments(reservationId: payment.reservationId),
     );
@@ -39,7 +42,7 @@ class _PaymentListView extends StatelessWidget {
       return;
     }
 
-    await context.read<PaymentListViewModel>().load();
+    await viewModel.load();
   }
 
   Future<bool> _confirmRefund(BuildContext context, Payment payment) async {
@@ -91,15 +94,15 @@ class _PaymentListView extends StatelessWidget {
   }
 
   Future<void> _requestRefund(BuildContext context, Payment payment) async {
+    final viewModel = context.read<PaymentListViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
     final confirmed = await _confirmRefund(context, payment);
     if (!context.mounted || !confirmed) {
       return;
     }
 
     try {
-      final result = await context.read<PaymentListViewModel>().requestRefund(
-        payment.reservationId,
-      );
+      final result = await viewModel.requestRefund(payment.reservationId);
       if (!context.mounted || result == null) {
         return;
       }
@@ -107,16 +110,12 @@ class _PaymentListView extends StatelessWidget {
       final message =
           '${result.refundSummary} Tahmini tutar: '
           '${PaymentPresentationHelper.formatPrice(result.refundAmountMinor)}';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     } on PaymentActionException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

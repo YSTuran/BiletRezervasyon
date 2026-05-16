@@ -49,9 +49,12 @@ class _RegisterViewState extends State<_RegisterView> {
     }
 
     FocusScope.of(context).unfocus();
+    final viewModel = _viewModel;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
-      final instruction = await _viewModel.register(
+      final instruction = await viewModel.register(
         fullName: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -61,20 +64,14 @@ class _RegisterViewState extends State<_RegisterView> {
         return;
       }
       if (instruction.message != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(instruction.message!)));
+        messenger.showSnackBar(SnackBar(content: Text(instruction.message!)));
       }
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(instruction.route, (route) => false);
+      navigator.pushNamedAndRemoveUntil(instruction.route, (route) => false);
     } on UserMessageException catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

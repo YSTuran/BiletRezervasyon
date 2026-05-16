@@ -44,6 +44,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
 
   Future<void> _approveTrip(BuildContext context) async {
     final viewModel = context.read<TripDetailViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final trip = await viewModel.approveTrip();
@@ -51,22 +52,21 @@ class _TripDetailViewState extends State<_TripDetailView> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer onaylandı.')));
+      messenger.showSnackBar(const SnackBar(content: Text('Sefer onaylandı.')));
     } catch (_) {
       if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer onaylanamadı.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sefer onaylanamadı.')),
+      );
     }
   }
 
   Future<void> _rejectTrip(BuildContext context) async {
     final viewModel = context.read<TripDetailViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
     final reason = await showDialog<String>(
       context: context,
       builder: (_) => const _TripRejectDialog(),
@@ -82,41 +82,41 @@ class _TripDetailViewState extends State<_TripDetailView> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer reddedildi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sefer reddedildi.')),
+      );
     } on TripReviewException catch (error) {
       if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer reddedilemedi.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sefer reddedilemedi.')),
+      );
     }
   }
 
   Future<void> _createReservation(BuildContext context) async {
+    final viewModel = context.read<TripDetailViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
     final selectedSeatId = _selectedSeatId;
     if (selectedSeatId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Lütfen önce bir koltuk seçin.')),
       );
       return;
     }
 
     try {
-      final reservation = await context
-          .read<TripDetailViewModel>()
-          .createReservation(tripSeatId: selectedSeatId);
+      final reservation = await viewModel.createReservation(
+        tripSeatId: selectedSeatId,
+      );
       if (!context.mounted || reservation == null) {
         return;
       }
@@ -124,21 +124,20 @@ class _TripDetailViewState extends State<_TripDetailView> {
       setState(() {
         _selectedSeatId = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Rezervasyon talebi oluşturuldu.')),
       );
     } on TripReviewException catch (error) {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
   Future<void> _cancelTrip(BuildContext context) async {
     final viewModel = context.read<TripDetailViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
     final reason = await showDialog<String>(
       context: context,
       builder: (_) => const _TripCancelDialog(),
@@ -154,7 +153,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Sefer iptal edildi. Yolculara bildirim gönderildi.'),
         ),
@@ -163,9 +162,7 @@ class _TripDetailViewState extends State<_TripDetailView> {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

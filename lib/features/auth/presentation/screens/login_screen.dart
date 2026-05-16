@@ -45,9 +45,12 @@ class _LoginViewState extends State<_LoginView> {
     }
 
     FocusScope.of(context).unfocus();
+    final viewModel = _viewModel;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
-      final instruction = await _viewModel.login(
+      final instruction = await viewModel.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -56,20 +59,14 @@ class _LoginViewState extends State<_LoginView> {
         return;
       }
       if (instruction.message != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(instruction.message!)));
+        messenger.showSnackBar(SnackBar(content: Text(instruction.message!)));
       }
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(instruction.route, (route) => false);
+      navigator.pushNamedAndRemoveUntil(instruction.route, (route) => false);
     } on UserMessageException catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

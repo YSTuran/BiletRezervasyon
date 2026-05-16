@@ -153,6 +153,9 @@ abstract final class TripPresentationHelper {
   }
 
   static String formatDateTime(DateTime value) {
+    if (value.millisecondsSinceEpoch == 0) {
+      return 'Tarih bilgisi alınamadı';
+    }
     final day = '${value.day}'.padLeft(2, '0');
     final month = '${value.month}'.padLeft(2, '0');
     final year = value.year;
@@ -162,6 +165,9 @@ abstract final class TripPresentationHelper {
   }
 
   static String formatDate(DateTime value) {
+    if (value.millisecondsSinceEpoch == 0) {
+      return 'Tarih bilgisi alınamadı';
+    }
     final day = '${value.day}'.padLeft(2, '0');
     final month = '${value.month}'.padLeft(2, '0');
     final year = value.year;

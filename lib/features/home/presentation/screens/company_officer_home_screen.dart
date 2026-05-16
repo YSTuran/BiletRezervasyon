@@ -57,29 +57,31 @@ class _CompanyOperationsHomeView extends StatefulWidget {
 class _CompanyOperationsHomeViewState
     extends State<_CompanyOperationsHomeView> {
   Future<void> _refresh() async {
-    await context.read<CompanyOperationsDashboardViewModel>().load();
+    final viewModel = context.read<CompanyOperationsDashboardViewModel>();
+    await viewModel.load();
   }
 
-  Future<void> _openCompanyForm() async {
-    await Navigator.of(context).pushNamed(AppRoutes.companyForm);
+  Future<void> _openRouteAndRefresh(String route, {Object? arguments}) async {
+    await Navigator.of(context).pushNamed(route, arguments: arguments);
     if (!mounted) {
       return;
     }
+
     await _refresh();
   }
 
+  Future<void> _openCompanyForm() async {
+    await _openRouteAndRefresh(AppRoutes.companyForm);
+  }
+
   Future<void> _openTripDetail(String tripId) async {
-    await Navigator.of(context).pushNamed(
+    await _openRouteAndRefresh(
       AppRoutes.tripDetail,
       arguments: TripDetailArguments(
         role: UserRole.companyOfficer,
         tripId: tripId,
       ),
     );
-    if (!mounted) {
-      return;
-    }
-    await _refresh();
   }
 
   List<Color> _heroColorsFor(Company? company) {
@@ -406,7 +408,7 @@ class _CompanyOperationsHomeViewState
               subtitle: 'Şirketinize ait seferleri görüntüleyin',
               colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
               onTap: () {
-                Navigator.of(context).pushNamed(
+                _openRouteAndRefresh(
                   AppRoutes.tripList,
                   arguments: const TripListArguments(
                     role: UserRole.companyOfficer,
@@ -420,7 +422,7 @@ class _CompanyOperationsHomeViewState
               subtitle: 'Seferleri tarihe göre planlayın',
               colors: const [Color(0xFF8360C3), Color(0xFF2EBF91)],
               onTap: () {
-                Navigator.of(context).pushNamed(AppRoutes.companyTripCalendar);
+                _openRouteAndRefresh(AppRoutes.companyTripCalendar);
               },
             ),
             HomeNavigationItem(
@@ -429,7 +431,7 @@ class _CompanyOperationsHomeViewState
               subtitle: 'Bekleyen yolcu taleplerini inceleyin',
               colors: const [Color(0xFFFF9966), Color(0xFFFF5E62)],
               onTap: () {
-                Navigator.of(context).pushNamed(
+                _openRouteAndRefresh(
                   AppRoutes.reservationList,
                   arguments: const ReservationListArguments(
                     role: UserRole.companyOfficer,
@@ -443,7 +445,7 @@ class _CompanyOperationsHomeViewState
               subtitle: 'Ödeme ve iade süreçlerini yönetin',
               colors: const [Color(0xFFFC5C7D), Color(0xFF6A82FB)],
               onTap: () {
-                Navigator.of(context).pushNamed(
+                _openRouteAndRefresh(
                   AppRoutes.paymentList,
                   arguments: const PaymentListArguments(
                     role: UserRole.companyOfficer,

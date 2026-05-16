@@ -36,21 +36,21 @@ class _HomeResolverViewState extends State<_HomeResolverView> {
   }
 
   Future<void> _resolveAndNavigate() async {
-    final instruction = await _viewModel.resolveRoute();
+    final viewModel = _viewModel;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final instruction = await viewModel.resolveRoute();
 
     if (!mounted || instruction == null) {
       return;
     }
 
     if (instruction.message != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(instruction.message!)));
+      messenger.showSnackBar(SnackBar(content: Text(instruction.message!)));
     }
 
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil(instruction.route, (route) => false);
+    navigator.pushNamedAndRemoveUntil(instruction.route, (route) => false);
   }
 
   @override

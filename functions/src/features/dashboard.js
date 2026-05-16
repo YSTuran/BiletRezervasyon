@@ -6,7 +6,7 @@ const {
   findCompanyByOfficerUserId,
   loadRequiredAppUser,
 } = require("../shared/access");
-const {serializeCompanyRow} = require("../shared/serializers");
+const {serializeCompanyRow, serializeDate} = require("../shared/serializers");
 const {
   quoteIdentifier,
   resolveCompanyTransportTypeColumn,
@@ -35,8 +35,8 @@ function mapCompanyOperationTrip(row) {
     trip_code: row.trip_code,
     origin: row.origin,
     destination: row.destination,
-    departure_at: row.departure_at,
-    arrival_at: row.arrival_at,
+    departure_at: serializeDate(row.departure_at),
+    arrival_at: serializeDate(row.arrival_at),
     seat_capacity: seatCapacity,
     status: row.status,
     transport_type: row.transport_type,
@@ -53,7 +53,7 @@ function mapPassengerManifestEntry(row) {
     trip_code: row.trip_code,
     origin: row.origin,
     destination: row.destination,
-    departure_at: row.departure_at,
+    departure_at: serializeDate(row.departure_at),
     seat_number: row.seat_number,
     passenger_name: row.passenger_name,
     passenger_email: row.passenger_email,
@@ -66,7 +66,7 @@ function mapPendingCompany(row) {
     id: row.id,
     name: row.name,
     transport_type: row.transport_type,
-    created_at: row.created_at,
+    created_at: serializeDate(row.created_at),
     officer_name: row.officer_name,
     officer_email: row.officer_email,
   };
@@ -78,8 +78,8 @@ function mapPendingTrip(row) {
     trip_code: row.trip_code,
     origin: row.origin,
     destination: row.destination,
-    departure_at: row.departure_at,
-    arrival_at: row.arrival_at,
+    departure_at: serializeDate(row.departure_at),
+    arrival_at: serializeDate(row.arrival_at),
     transport_type: row.transport_type,
     company_name: row.company_name,
   };
@@ -94,7 +94,7 @@ function mapPendingReservation(row) {
     destination: row.destination,
     seat_number: row.seat_number,
     company_name: row.company_name,
-    requested_at: row.requested_at,
+    requested_at: serializeDate(row.requested_at),
   };
 }
 
@@ -103,7 +103,7 @@ function mapRejectionReason(row) {
     category: row.category,
     subject: row.subject,
     reason: row.reason,
-    occurred_at: row.occurred_at,
+    occurred_at: serializeDate(row.occurred_at),
   };
 }
 
@@ -446,7 +446,7 @@ async function getAdminDashboardCore({auth, data, createError}) {
                     'Firma'::text AS category,
                     c.name AS subject,
                     c.rejection_reason AS reason,
-                    c.updated_at AS occurred_at
+                    COALESCE(c.updated_at, c.created_at) AS occurred_at
                   FROM companies c
                   WHERE c.status = 'rejected'::approval_status
                     AND c.rejection_reason IS NOT NULL
@@ -457,7 +457,7 @@ async function getAdminDashboardCore({auth, data, createError}) {
                     'Sefer'::text AS category,
                     CONCAT(t.trip_code, ' - ', t.origin, ' -> ', t.destination) AS subject,
                     t.rejection_reason AS reason,
-                    t.updated_at AS occurred_at
+                    COALESCE(t.updated_at, t.created_at) AS occurred_at
                   FROM trips t
                   WHERE t.status = 'rejected'::trip_status
                     AND t.rejection_reason IS NOT NULL
@@ -468,7 +468,7 @@ async function getAdminDashboardCore({auth, data, createError}) {
                     'Rezervasyon'::text AS category,
                     CONCAT(t.trip_code, ' / Koltuk ', ts.seat_number) AS subject,
                     r.rejection_reason AS reason,
-                    r.updated_at AS occurred_at
+                    COALESCE(r.updated_at, r.requested_at, r.created_at) AS occurred_at
                   FROM reservations r
                   INNER JOIN trips t ON t.id = r.trip_id
                   INNER JOIN trip_seats ts
@@ -476,9 +476,25 @@ async function getAdminDashboardCore({auth, data, createError}) {
                    AND ts.trip_id = r.trip_id
                   WHERE r.status = 'rejected'::reservation_status
                     AND r.rejection_reason IS NOT NULL
+
+                  UNION ALL
+
+                  SELECT
+                    'İade'::text AS category,
+                    CONCAT(t.trip_code, ' / Koltuk ', ts.seat_number) AS subject,
+                    rr.rejection_reason AS reason,
+                    COALESCE(rr.decided_at, rr.updated_at, rr.requested_at) AS occurred_at
+                  FROM refund_requests rr
+                  INNER JOIN reservations r ON r.id = rr.reservation_id
+                  INNER JOIN trips t ON t.id = r.trip_id
+                  INNER JOIN trip_seats ts
+                    ON ts.id = r.trip_seat_id
+                   AND ts.trip_id = r.trip_id
+                  WHERE rr.status = 'rejected'::refund_request_status
+                    AND rr.rejection_reason IS NOT NULL
                 ) rejected_items
                 ORDER BY occurred_at DESC
-                LIMIT 10
+                LIMIT 3
               `,
           ),
         ]);

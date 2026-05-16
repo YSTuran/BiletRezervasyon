@@ -51,7 +51,24 @@ class _AdminDashboardHomeView extends StatefulWidget {
 
 class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
   Future<void> _refresh() async {
-    await context.read<AdminDashboardViewModel>().load();
+    final viewModel = context.read<AdminDashboardViewModel>();
+    await viewModel.load();
+  }
+
+  Future<void> _openRouteAndRefresh(String route, {Object? arguments}) async {
+    await Navigator.of(context).pushNamed(route, arguments: arguments);
+    if (!mounted) {
+      return;
+    }
+
+    await _refresh();
+  }
+
+  Future<void> _openTripDetail(String tripId) async {
+    await _openRouteAndRefresh(
+      AppRoutes.tripDetail,
+      arguments: TripDetailArguments(role: UserRole.admin, tripId: tripId),
+    );
   }
 
   Widget _buildHeroCard(BuildContext context, HomeViewModel homeViewModel) {
@@ -235,15 +252,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
             border: Border.all(color: const Color(0xFFF1C187)),
           ),
           child: ListTile(
-            onTap: () {
-              Navigator.of(context).pushNamed(
-                AppRoutes.tripDetail,
-                arguments: TripDetailArguments(
-                  role: UserRole.admin,
-                  tripId: trip.id,
-                ),
-              );
-            },
+            onTap: () => _openTripDetail(trip.id),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 6,
@@ -319,12 +328,13 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
   }
 
   Widget _buildRejectionReasons(List<DashboardRejectionReason> items) {
-    if (items.isEmpty) {
+    final visibleItems = items.take(3).toList();
+    if (visibleItems.isEmpty) {
       return const Text('Kayıtlı red nedeni bulunmuyor.');
     }
 
     return Column(
-      children: items.map((item) {
+      children: visibleItems.map((item) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -344,7 +354,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               Text(item.reason),
               const SizedBox(height: 8),
               Text(
-                TripPresentationHelper.formatDateTime(item.occurredAt),
+                _formatRejectionDate(item.occurredAt),
                 style: const TextStyle(color: Color(0xFF76504A)),
               ),
             ],
@@ -352,6 +362,13 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
         );
       }).toList(),
     );
+  }
+
+  String _formatRejectionDate(DateTime value) {
+    if (value.millisecondsSinceEpoch == 0) {
+      return 'Tarih bilgisi alınamadı';
+    }
+    return TripPresentationHelper.formatDateTime(value);
   }
 
   Widget _buildActionPanel(BuildContext context) {
@@ -373,7 +390,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               subtitle: 'Firma başvurularını inceleyin',
               colors: const [Color(0xFF396AFC), Color(0xFF20BDFF)],
               onTap: () {
-                Navigator.of(context).pushNamed(AppRoutes.companyManagement);
+                _openRouteAndRefresh(AppRoutes.companyManagement);
               },
             ),
             HomeNavigationItem(
@@ -382,7 +399,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               subtitle: 'Sefer onaylarını ve kayıtlarını görün',
               colors: const [Color(0xFFFF9966), Color(0xFFFF5E62)],
               onTap: () {
-                Navigator.of(context).pushNamed(
+                _openRouteAndRefresh(
                   AppRoutes.tripList,
                   arguments: const TripListArguments(role: UserRole.admin),
                 );
@@ -394,7 +411,7 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               subtitle: 'Rezervasyon akışını takip edin',
               colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
               onTap: () {
-                Navigator.of(context).pushNamed(
+                _openRouteAndRefresh(
                   AppRoutes.reservationList,
                   arguments: const ReservationListArguments(
                     role: UserRole.admin,
@@ -471,7 +488,8 @@ class _AdminDashboardHomeViewState extends State<_AdminDashboardHomeView> {
               const SizedBox(height: 18),
               DashboardSectionCard(
                 title: 'Son Red Nedenleri',
-                subtitle: 'Firmalar, seferler ve rezervasyonlardan son notlar',
+                subtitle:
+                    'Firmalar, seferler, rezervasyonlar ve iadelerden son 3 kayıt',
                 child: _buildRejectionReasons(dashboard.rejectionReasons),
               ),
               const SizedBox(height: 18),

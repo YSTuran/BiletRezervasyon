@@ -47,7 +47,7 @@ class CompanyFormViewModel extends BaseViewModel {
   Future<Company?> saveCompany(String name) async {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
-      throw const CompanyFormException('Firma adi zorunludur.');
+      throw const CompanyFormException('Firma adı zorunludur.');
     }
 
     if (isBusy) {

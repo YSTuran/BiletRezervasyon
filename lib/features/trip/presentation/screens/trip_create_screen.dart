@@ -105,8 +105,12 @@ class _TripCreateViewState extends State<_TripCreateView> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    final viewModel = _viewModel;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     if (_departureAt == null || _arrivalAt == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Kalkış ve varış zamanı seçilmelidir.')),
       );
       return;
@@ -114,16 +118,16 @@ class _TripCreateViewState extends State<_TripCreateView> {
 
     final priceValue = _priceController.text.trim().replaceAll(',', '.');
     final price = double.tryParse(priceValue);
-    final seatCapacity = _selectedSeatCapacity;
+    final seatCapacity = _seatCapacityFor(viewModel.transportType);
     if (seatCapacity == null || price == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Kapasite ve fiyat geçerli olmalıdır.')),
       );
       return;
     }
 
     try {
-      final trip = await _viewModel.createTrip(
+      final trip = await viewModel.createTrip(
         origin: _originController.text,
         destination: _destinationController.text,
         departureAt: _departureAt!,
@@ -136,17 +140,15 @@ class _TripCreateViewState extends State<_TripCreateView> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sefer oluşturuldu.')));
-      Navigator.of(context).pop(trip.id);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sefer oluşturuldu.')),
+      );
+      navigator.pop(trip.id);
     } on TripFormException catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -162,16 +164,24 @@ class _TripCreateViewState extends State<_TripCreateView> {
     return '$day.$month.$year $hour:$minute';
   }
 
+  int? _seatCapacityFor(TransportType? transportType) {
+    if (transportType == null) {
+      return null;
+    }
+
+    final options = SeatCapacityPolicy.optionsFor(transportType);
+    if (options.contains(_selectedSeatCapacity)) {
+      return _selectedSeatCapacity;
+    }
+
+    return SeatCapacityPolicy.defaultFor(transportType);
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<TripCreateViewModel>();
     final transportType = viewModel.transportType;
-    if (transportType != null &&
-        !SeatCapacityPolicy.optionsFor(
-          transportType,
-        ).contains(_selectedSeatCapacity)) {
-      _selectedSeatCapacity = SeatCapacityPolicy.defaultFor(transportType);
-    }
+    final selectedSeatCapacity = _seatCapacityFor(transportType);
 
     if (!viewModel.hasLoaded && viewModel.isBusy) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -305,7 +315,8 @@ class _TripCreateViewState extends State<_TripCreateView> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
-                        initialValue: _selectedSeatCapacity,
+                        key: ValueKey(transportType),
+                        initialValue: selectedSeatCapacity,
                         decoration: InputDecoration(
                           labelText: 'Koltuk Kapasitesi',
                           helperText: SeatCapacityPolicy.layoutLabelFor(
